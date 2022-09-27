@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.9
+# v0.19.12
 
 using Markdown
 using InteractiveUtils
@@ -18,13 +18,12 @@ end
 begin
 	using CSV, DataFrames, Query
 	using StatsBase: mean, std
-	using Optim, ForwardDiff#, NLSolversBase
+	using Optim, ForwardDiff
 	using Turing, Distributions, MCMCChains
 	using LinearAlgebra,PDMats
 	using Plots, LaTeXStrings, Plots.Measures
 	using PlutoUI, PlutoTeachingTools
 	using Downloads
-	#using ParameterHandling
 	using Random
 	Random.seed!(123)
 end
@@ -40,6 +39,7 @@ TableOfContents()
 
 # ╔═╡ 921f13df-bc87-4d1f-8429-90cd234a65a1
 md"""
+### Overview 
 In this lab, you'll analyze radial velocity (RV) observations of 51 Pegasi, the first sun-like star discovered to host an exoplanet.  First, you'll fit a Keplerian model to data from one observatory/instrument.  Then you'll use both bootstrap and MCMC methods to obtain estimates of the uncertainties in the RV amplitude parameter, $K$, which is proportional to the planet's mass.  Then you'll repeat the analysis using data from a second observatory/instrument.  You'll compare the uncertainty estimates from each method and instrument, so as to develop intuition for how measurement uncertainties from different methods and datasets compare.
 """
 
@@ -61,7 +61,7 @@ $$\tan\left(\frac{\nu(t)}{2}\right) = \sqrt{\frac{1+e}{1-e}} \tan\left(\frac{E(t
 
 The true anomaly ($\nu(t)$ or $f(t)$ or $T(t)$) specifies position in orbit using angle from focus of ellipse
 
-The eccentric anomaly ($E(t)$) specifies the position in orbit using the angle from center of elipse and is computed via Kepler's equation
+The eccentric anomaly ($E(t)$) specifies the position in orbit using the angle from center of ellipse and is computed via Kepler's equation
 $$M(t) = E(t) - e \sin(E(t))$$
 """
 
@@ -108,7 +108,7 @@ begin
 		df_all = CSV.read(fn, DataFrame)
 		select!(df_all,["name","jd","mnvel","errvel", "cts","sval","tel"])
 		# Rename columns to match labels from table in original paper
-		rename!(df_all, "name"=>"Name","jd"=>"d","mnvel"=>"RVel","errvel"=>"e_RVel","tel"=>"Inst", "sval"=>"SVal")	
+		rename!(df_all, "name"=>"Name","jd"=>"d","mnvel"=>"RVel","errvel"=>"e_RVel","tel"=>"Inst", "sval"=>"SVal")
 		star_names = unique(df_all.Name)
 		md"Successfully, read RVs for $(length(star_names)) stars from California Legacy Survey from [https://github.com/leerosenthalj/CLSI](https://github.com/leerosenthalj/CLSI) & from [Rosenthal et al. (2021)](https://doi.org/10.3847/1538-4365/abe23c) into `df_all`."
 	else
@@ -117,7 +117,7 @@ begin
 
 		danger(md"Error reading data file with RVs.  Expect empty plots below.")
 	end
-	
+
 end
 
 # ╔═╡ d79fc353-e30e-49ab-aa8e-9ba4b76a879b
@@ -143,7 +143,7 @@ Group data according to which instrument made the observation, so we can analyze
 """
 
 # ╔═╡ bce3f35c-07a1-48ef-8a29-243b2215fcb5
-begin 
+begin
 	df_star_by_inst = DataFrame()
 	try
 	df_star_by_inst = df_star |> @groupby( _.Inst ) |> @map( {bjd = _.d, rv = _.RVel, σrv = _.e_RVel, inst= key(_), nobs_inst=length(_) }) |> DataFrame;
@@ -154,16 +154,16 @@ end;
 # ╔═╡ 174f6c6d-6ff9-449d-86b3-85bcad9f01a2
  begin  # Make more useful observatory/instrument labels
 	instrument_label = Dict(zip(["j","k","apf","lick"],["Keck (post)","Keck (pre)","APF","Lick"]))
-	for k in keys(instrument_label)  
+	for k in keys(instrument_label)
 		if k ∉ df_star_by_inst.inst
 			delete!(instrument_label,k)
 		end
 	end
-	instrument_label 
+	instrument_label
 end;
 
 # ╔═╡ 8b1f8b91-12b5-4e61-a8ff-63538189cf34
-t_offset = 2455000;  # So labels on x-axis are more digestable
+t_offset = 2455000;  # So labels on x-axis are more digestible
 
 # ╔═╡ 5edc2a2d-6f63-4ac6-8c33-2c5d670bc466
 begin
@@ -197,17 +197,20 @@ inst_idx = findfirst(isequal(inst_to_plt),map(k->instrument_label[k], df_star_by
 
 # ╔═╡ 10f95d69-9cd8-47d4-a534-8de09ea3b216
 begin
-	plt_1inst = plot(xlabel="Time (d)", ylabel="RV (m/s)", title="Zoom in on RVs from instrument being fit") 
+	plt_1inst = plot(xlabel="Time (d)", ylabel="RV (m/s)", title="Zoom in on RVs from instrument being fit")
 	scatter!(plt_1inst, df_star_by_inst[inst_idx,:bjd].-t_offset,df_star_by_inst[inst_idx,:rv],yerr=df_star_by_inst[inst_idx,:σrv], label=instrument_label[df_star_by_inst[inst_idx,:inst]], markercolor=inst_idx)
 end
 
 # ╔═╡ b821a2ae-bf16-4018-b85a-ff1713f40103
 md"""
-**Q1a:** Which observatory has provided the most observations to this dataset?  
+**Q1a:** Which observatory has provided the most observations to this dataset?
 """
 
 # ╔═╡ 2f09622b-838c-42df-a74f-81960916fae2
 response_1a = missing
+
+# ╔═╡ c4f683e2-ce56-45a7-b483-7a8a658cf342
+ismissing(response_1a) && still_missing()
 
 # ╔═╡ 21834080-14de-4926-9766-5a3ad994e2a1
 md"""
@@ -216,7 +219,7 @@ md"""
 
 # ╔═╡ 3c14ec5c-e72a-4af4-8859-fd7a0bf91409
 md"""
-Make NamedTuple with time, observed rv and measurment uncertainties for data from instrument to be analyzed below.
+Make NamedTuple with time, observed RV and measurement uncertainties for data from instrument to be analyzed below.
 """
 
 # ╔═╡ 5d61ebb8-465a-4d10-a0e6-a0c043f511b5
@@ -237,7 +240,7 @@ Fit 1-planet model: $(@bind try_fit_1pl CheckBox())
 # ╔═╡ 29352332-7fae-4709-9883-cfb480650a6c
 md"""
 Plotting the RV versus phase (rather than time) makes it much easier to see the orbit of the planet when the time span of observations is much longer than the orbital period of the planet.
-Therefore, we'll use the best-fit orbital period fit above to compute the orbital phase of the planet at each time.  
+Therefore, we'll use the best-fit orbital period fit above to compute the orbital phase of the planet at each time.
 We'll apply an arbitrary vertical offset to observations from each observatory, so you can compare the data from the different observatories.
 """
 
@@ -248,23 +251,29 @@ Since the planet causes large amplitude RV variations, it's useful to look at th
 
 # ╔═╡ cf582fc9-07b1-4d09-b379-2576924c026b
 md"""
-**Q1b:** What is the typical scatter of RV residuals about the best-fit model for data from each observatory?  What observatory has the smallest scatter in the residuals between the observations and the best-fit model?  
+**Q1b:** What is the typical scatter of RV residuals about the best-fit model for data from each observatory?  What observatory has the smallest scatter in the residuals between the observations and the best-fit model?
 """
 
 # ╔═╡ 9007735e-45c2-4a96-8ea5-03d7b8b58410
 response_1b = missing
 
+# ╔═╡ 70a862c4-a157-4e3b-b447-4a746994ca34
+ismissing(response_1b) && still_missing()
+
 # ╔═╡ ba869a69-167e-4a1c-92af-e8592f6fca3d
 md"""
-**Q1c:** For which observatory do you anticipate that the dervied radial velocity amplitude ($K$) will have the smallest uncertainties?  
+**Q1c:** For which observatory do you anticipate that the derived radial velocity amplitude ($K$) will have the smallest uncertainties?
 """
 
 # ╔═╡ 220caa90-90e8-4a52-a133-e37bb9cf5b50
 response_1c = missing
 
+# ╔═╡ 93d125da-67d8-4dba-98b5-405c684eeb9a
+ismissing(response_1c) && still_missing()
+
 # ╔═╡ 11469768-34af-470a-b431-c47b17d6a586
 Markdown.parse("""
-In the next sections, we'll analyze the data from one observatory at a time (using the [drop-down box above]($(select_obs_cell_url))).  I'd suggest starting with Keck.  Then, you can repeat the analysis using data from APF (or Lick observatory).  
+In the next sections, we'll analyze the data from one observatory at a time (using the [drop-down box above]($(select_obs_cell_url))).  I'd suggest starting with Keck.  Then, you can repeat the analysis using data from APF (or Lick observatory).
 """)
 
 # ╔═╡ 710af3aa-b842-43b2-ab96-cda80b2a2ee0
@@ -274,7 +283,7 @@ md"""
 
 # ╔═╡ b89645c8-6574-4f53-b40e-5c4e4236671e
 md"""
-Number of Bootstrap Samples: $(@bind num_bootstrap_samples NumberField(1:1000, default= 200))    
+Number of Bootstrap Samples: $(@bind num_bootstrap_samples NumberField(1:1000, default= 200))
 $(@bind redraw_bootstrap Button("Redraw bootstrap samples"))
 """
 
@@ -285,17 +294,20 @@ Run bootstrap analysis with 1-planet model: $(@bind try_bootstrap_1pl CheckBox()
 
 # ╔═╡ ebec340e-297f-44c1-8095-60ea68dd530c
 md"""
-Once you've selected the observatory/instrument whose data you want to analyze, check the box above to trigger the cell below to generate many synthetic datasets by draw "bootstrap" samples from the actual data (with replacement), to attempt to find the best-fit parameters for each synthetic dataset.  We can visualize the disitribution of the resulting fits to the bootstrap simulations to get an estimate of the uncertainties in the model parameters.  If you'd like to get smoother histograms below (and more precise estimates of the mean and standard deviation of the parameters), then you can boost the number of bootstrap samples.  
+Once you've selected the observatory/instrument whose data you want to analyze, check the box above to trigger the cell below to generate many synthetic datasets by draw "bootstrap" samples from the actual data (with replacement), to attempt to find the best-fit parameters for each synthetic dataset.  We can visualize the distribution of the resulting fits to the bootstrap simulations to get an estimate of the uncertainties in the model parameters.  If you'd like to get smoother histograms below (and more precise estimates of the mean and standard deviation of the parameters), then you can boost the number of bootstrap samples.
 """
 
 # ╔═╡ 7296def6-31c0-4df2-b6ca-2fd953bdfb1f
 md"""
 ### Cross-validation
-We can compute the distribution of RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate this separately for the points used for fitting the model and the points excluded from fitting the model.  
+We can compute the distribution of RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate this separately for the points used for fitting the model and the points excluded from fitting the model.
 """
 
 # ╔═╡ 0737daef-b8f1-49ef-9a06-5cf1b716f719
 response_2a = missing
+
+# ╔═╡ 707601dc-797d-4332-8538-f7a358113bc9
+ismissing(response_2a) && still_missing()
 
 # ╔═╡ 10a2b5b5-6a84-4b1e-a5f6-dd2434541edb
 md"""
@@ -305,6 +317,9 @@ md"""
 # ╔═╡ 390d9fc3-22f1-4e46-8164-4fc33f494035
 response_2b = missing
 
+# ╔═╡ 2eb9bbc8-1722-459f-aa57-a55dd54cebd0
+ismissing(response_2b) && still_missing()
+
 # ╔═╡ 8743b110-ed40-4718-8fc3-e296ee8339f2
 md"""
 ## Markov chain Monte Carlo Estimate of Uncertainties
@@ -312,7 +327,7 @@ md"""
 
 # ╔═╡ 67f3aef3-f34f-4e67-8ff4-adb8aa0284db
 md"""
-While the bootstrap method has some intuitive appeal, the theoretical basis is not as strong as performing proper Bayesian inference.  Therefore, you'll compare the uncertainty estimates from the two methods below.  
+While the bootstrap method has some intuitive appeal, the theoretical basis is not as strong as performing proper Bayesian inference.  Therefore, you'll compare the uncertainty estimates from the two methods below.
 """
 
 # ╔═╡ 6a141962-d4d6-4f27-b94e-2d0aee0740c7
@@ -335,15 +350,15 @@ The MCMC simulations below will take several minutes to run.  To prevent the not
 md"""
 **Markov chain Monte Carlo Parameters**
 
-Steps per chain  $(Child("num_steps_per_chain", NumberField(100:100:10_000; default=100))) 
-Burn-in steps per chain  $(Child("num_steps_burn_in_per_chain", NumberField(100:100:10_000; default=200))) 
+Steps per chain  $(Child("num_steps_per_chain", NumberField(100:100:10_000; default=100)))
+Burn-in steps per chain  $(Child("num_steps_burn_in_per_chain", NumberField(100:100:10_000; default=200)))
 
-Number of chains  $(Child("num_chains", NumberField(1:10; default=4)))  
+Number of chains  $(Child("num_chains", NumberField(1:10; default=4)))
 Ready to run MCMC simulations: $(Child("run", CheckBox()))
 """ end )
 
 # ╔═╡ 86aa15f3-b525-4c77-ab01-159b8e977314
-aside(tip(md"""You will see lots of warning messages about "The current propsoal will be rejected due to numerical error(s).".  That's because our model has some hard boundaries (e.g., eccentricity can not exceed 1, K must be positive).  When the Markov chain proposes a state outside the support of the priors, the model returns -Inf for the log probability.  This prevents the Markov chain from accepting invalid proposals, but creates lots of warning messages."""), v_offset=-100)
+aside(tip(md"""You will see lots of warning messages about "The current proposal will be rejected due to numerical error(s).".  That's because our model has some hard boundaries (e.g., eccentricity can not exceed 1, K must be positive).  When the Markov chain proposes a state outside the support of the priors, the model returns -Inf for the log probability.  This prevents the Markov chain from accepting invalid proposals, but creates lots of warning messages."""), v_offset=-100)
 
 # ╔═╡ 962d20ef-8446-4894-80df-725c1bac04be
 md"""
@@ -352,20 +367,23 @@ It's always good to check trace plots to see if there's anything suspicious in t
 
 # ╔═╡ 300a1ea8-023e-4c38-8a7e-1bc9ac62c311
 md"""
-Next, we'll inspect the distributions of the marginal posterior for several of the model parameters.  
+Next, we'll inspect the distributions of the marginal posterior for several of the model parameters.
 """
 
 # ╔═╡ 7e1a46fd-392c-412c-8a5c-e54765112564
 md"""
-**Q3a:** Do you notice significant differences in the traces of model parameters from the different Markov chains (in different colors)?  Or in the histograms of marginal posterior distributions?  If so, consider running the Markov chains longer.  (But if the run time starts to exceed ~5 minutes, then do the best you can with the results you can get quickly.  You're welcome to run much longer chains (e.g., while you take a break or go eat), but that's not required.)
+**Q3a:** Do you notice significant differences in the traces of model parameters from the different Markov chains (in different colors)?  Or in the histograms of marginal posterior distributions?  If so, try running the Markov chains longer.  How many steps per chain did you need to run before you no longer see evidence of nonconvergence?  (If the run time starts to exceed ~5 minutes, then you can report the best you can with the results you can get quickly.  You're welcome to run much longer chains (e.g., while you take a break or go eat), but that's not required.)
 """
 
 # ╔═╡ a935174a-1057-4ad6-9b92-84981f4a4bb2
 response_3a = missing
 
+# ╔═╡ b995e3be-8c50-489b-b62f-97f15d43b899
+ismissing(response_3a) && still_missing()
+
 # ╔═╡ eb96986f-78fe-4a28-9ccf-6d3a66f063a6
 md"""
-We can compute summary statistics (e.g., sample mean, sample standard deviation, various quantiles)  for each model parameter from each Markov chain.  
+We can compute summary statistics (e.g., sample mean, sample standard deviation, various quantiles)  for each model parameter from each Markov chain.
 """
 
 # ╔═╡ 3cf57331-688b-4b71-83f1-51cf53cfb0ee
@@ -382,23 +400,46 @@ md"""
 # ╔═╡ 96fc2d52-5128-483c-9962-817f1b013065
 response_3b = missing
 
-# ╔═╡ abad7a4d-0bb8-4c8f-bdec-f9e0d2839fd7
+# ╔═╡ aea805f0-e986-4fde-a313-34b7ff70a4af
+ismissing(response_3b) && still_missing()
+
+# ╔═╡ 0aaa6d1e-2ad1-4e0b-a865-6fef5f61d052
 md"""
 Now, repeat the analysis for data from another instrument.  (Analyzing the APF data will be a little faster, since Lick has more data points.)
+"""
 
+# ╔═╡ f6bc0968-0397-40f3-ae1a-6f93caa6f77d
+md"""
+**Q3c:**  Which instrument did you choose?  How many steps per chain did you need to run the Markov chains before you no longer see obvious signs of non-convegence?
+"""
+
+# ╔═╡ 70f74254-6ea7-4034-a37c-f3b46008b556
+response_3c = missing
+
+# ╔═╡ 49c5ef16-4e2d-4971-a969-b6811eb4f5c6
+ismissing(response_3c) && still_missing()
+
+# ╔═╡ 1670fb35-7106-40c7-9397-c9dc145f3941
+md"""
 **Q3d:** How do the estimates for the mean and uncertainty for K compare across the two observatories?
 """
 
 # ╔═╡ afadd762-5eb8-47ca-82b3-0862299e5fb9
 response_3d = missing
 
+# ╔═╡ 3ca97dca-59fc-47a6-b59b-b6f45670571c
+ismissing(response_3d) && still_missing()
+
 # ╔═╡ e325a28f-c8ef-4f0c-8f29-e9f4c34ea746
 md"""
-**Q3e:** Based on the combination of results, what do you conclude for the accuracy of the measurement of K?
+**Q3e:** Based on the combination of results, what do you conclude for the accuracy of the measurement of K?  What about the accuracy of planet mass measurements?
 """
 
 # ╔═╡ 244eccc2-463d-453b-bc30-1decbf0eed9a
 response_3e = missing
+
+# ╔═╡ 434e0498-d0b2-4b81-8000-0d0cd60efbcc
+ismissing(response_3e) && still_missing()
 
 # ╔═╡ bb1e1664-0c67-4aea-9e76-37669d253592
 md"""
@@ -408,54 +449,72 @@ md"""
 # ╔═╡ 66f4acf5-152c-4792-9d7f-9a0ddb6459f6
 response_3f = missing
 
+# ╔═╡ febba1c9-a166-475b-9344-1a7d7881b7fa
+ismissing(response_3f) && still_missing()
+
+# ╔═╡ dedb1ece-059f-4687-804b-93d82fadf08b
+md"""
+**Q3g:**
+The MCMC approach is a theoretically more rigorous approach to quanitfying uncertainties in model parameters.  
+List at least two reasons why the bootstrap approach to assessing parameter uncertainties may be preferred.
+"""
+
+# ╔═╡ 781b21ac-5b21-413f-b22d-a5ba81e4b81c
+response_3g = missing
+
+# ╔═╡ ff200532-9bae-4e3f-b05e-b192c942324b
+ismissing(response_3g) && still_missing()
+
 # ╔═╡ b60aadbc-4e70-414e-9fdc-c3b042cb17bf
 md"# Setup"
 
 # ╔═╡ 69f40924-6b24-4014-8c1b-f600a0759aab
 md"## Keplerian Radial Velocity Model"
 
-# ╔═╡ 5f438b58-2f87-4373-b9ca-e35673b7b46f
-@model rv_kepler_model_v1(t, rv_obs, σ_obs) = begin
-    # Specify Priors
-	P_max = 1000
-	K_max = 1000
-	σj_max = 100
-    P ~ ModifiedJeffreysPriorForScale(1.0, P_max)        # orbital period
-    K ~ ModifiedJeffreysPriorForScale(1.0, K_max)        # RV amplitude
-    #e ~ Truncated(Rayleigh(0.3),0.0,0.999);              # orbital eccentricity
-    #ω ~ Uniform(0, 2π)           # arguement of pericenter
-	h ~ Normal(0,0.3)
-	k ~ Normal(0,0.3)
-    M0_minus_ω ~ Uniform(0,2π)   # mean anomaly at t=0 minus ω
-    C ~ Normal(0,1000.0)         # velocity offset
-    #σ_j ~ ModifiedJeffreysPriorForScale(1.0, σj_max)      # magnitude of RV jitter
-	σ_j ~ LogNormal(log(1.0), 0.5)      # magnitude of RV jitter
-        
-    # Transformations to make sampling more efficient
-	e = sqrt(h^2+k^2)
-	ω = atan(h,k)
-    M0 = M0_minus_ω + ω
-
-    # Reject any parameter values that are unphysical, _before_ trying 
-    # to calculate the likelihood to avoid errors/assertions
-    if !(0.0 <= e < 1.0)      
-        Turing.@addlogprob! -Inf
-        return
-    end
-
-    # Likelihood
-    # Calculate the true velocity given model parameters
-    rv_true = calc_rv_keplerian_plus_const.(t, P,K,e,ω,M0,C)
-        
-    # Specify measurement model
-    σ_eff = sqrt.(σ_obs.^2 .+ σ_j.^2)
-    rv_obs ~ MvNormal(rv_true, σ_eff )
-end
-
 # ╔═╡ a7514405-af4c-4f16-8508-91ee624d8a1c
 function calc_true_anom(ecc_anom::Real, e::Real)
 	true_anom = 2*atan(sqrt((1+e)/(1-e))*tan(ecc_anom/2))
 end
+
+# ╔═╡ 4f047081-a4d6-414b-9c3e-0eb055c730b3
+"""
+   `ecc_anom_init_guess_danby(mean_anomaly, eccentricity)`
+
+Returns initial guess for the eccentric anomaly for use by iterative solvers of Kepler's equation for bound orbits.
+
+Based on "The Solution of Kepler's Equations - Part Three"
+Danby, J. M. A. (1987) Journal: Celestial Mechanics, Volume 40, Issue 3-4, pp. 303-312 (1987CeMec..40..303D)
+"""
+function ecc_anom_init_guess_danby(M::Real, ecc::Real)
+	@assert -2π<= M <= 2π
+	@assert 0 <= ecc <= 1.0
+    if  M < zero(M)
+		M += 2π
+	end
+    E = (M<π) ? M + 0.85*ecc : M - 0.85*ecc
+end;
+
+# ╔═╡ 8f700e72-df0f-4e68-85fe-7fbe8da7fbb1
+"""
+   `update_ecc_anom_laguerre(eccentric_anomaly_guess, mean_anomaly, eccentricity)`
+
+Update the current guess for solution to Kepler's equation
+
+Based on "An Improved Algorithm due to Laguerre for the Solution of Kepler's Equation"
+   Conway, B. A.  (1986) Celestial Mechanics, Volume 39, Issue 2, pp.199-211 (1986CeMec..39..199C)
+"""
+function update_ecc_anom_laguerre(E::Real, M::Real, ecc::Real)
+  #es = ecc*sin(E)
+  #ec = ecc*cos(E)
+  (es, ec) = ecc .* sincos(E)  # Does combining them provide any speed benefit?
+  F = (E-es)-M
+  Fp = one(M)-ec
+  Fpp = es
+  n = 5
+  root = sqrt(abs((n-1)*((n-1)*Fp*Fp-n*F*Fpp)))
+  denom = Fp>zero(E) ? Fp+root : Fp-root
+  return E-n*F/denom
+end;
 
 # ╔═╡ 690205fb-0b95-4614-9b66-dec362ed693c
 begin
@@ -464,14 +523,14 @@ begin
 	"""
 	   `calc_ecc_anom( mean_anomaly, eccentricity )`
 	   `calc_ecc_anom( param::Vector )`
-	
+
 	Estimates eccentric anomaly for given 'mean_anomaly' and 'eccentricity'.
-	If passed a parameter vector, param[1] = mean_anomaly and param[2] = eccentricity. 
-	
+	If passed a parameter vector, param[1] = mean_anomaly and param[2] = eccentricity.
+
 	Optional parameter `tol` specifies tolerance (default 1e-8)
 	"""
 	function calc_ecc_anom end
-	
+
 	function calc_ecc_anom(mean_anom::Real, ecc::Real; tol::Real = 1.0e-8)
 	  	if !(0 <= ecc <= 1.0)
 			println("mean_anom = ",mean_anom,"  ecc = ",ecc)
@@ -489,7 +548,7 @@ begin
 	    end
 	    return E
 	end
-	
+
 	function calc_ecc_anom(param::Vector; tol::Real = 1.0e-8)
 		@assert length(param) == 2
 		calc_ecc_anom(param[1], param[2], tol=tol)
@@ -498,16 +557,16 @@ end
 
 # ╔═╡ 6c01ab20-217f-4671-9ade-8ac928a65771
 Markdown.parse("""
-There is no closed form solution for \$E\$, so we must solve for \$E(t)\$ iteratively 
+There is no closed form solution for \$E\$, so we must solve for \$E(t)\$ iteratively
 (see [code for `calc_ecc_anom(M, e)`]($(calc_ecc_anom_url)).
 """)
 
 # ╔═╡ 3fbcc50d-9f6a-4aec-9a8f-f2f525223f0e
-begin 
+begin
 	""" Calculate RV from t, P, K, e, ω and M0	"""
-	function calc_rv_keplerian end 
+	function calc_rv_keplerian end
 	calc_rv_keplerian(t, p::Vector) = calc_rv_keplerian(t, p...)
-	function calc_rv_keplerian(t, P,K,e,ω,M0) 
+	function calc_rv_keplerian(t, P,K,e,ω,M0)
 		mean_anom = t*2π/P-M0
 		ecc_anom = calc_ecc_anom(mean_anom,e)
 		true_anom = calc_true_anom(ecc_anom,e)
@@ -529,7 +588,7 @@ function make_rv_vs_phase_panel(e, ω; P::Real=1, K::Real=1, M0::Real =0, panel_
 end
 
 # ╔═╡ ee7aaab9-5e4f-46ab-8100-75be142fba72
-begin 
+begin
 	plt_1pl = make_rv_vs_phase_panel(e_plt, ω_plt, P=P_plt, K=K_plt, M0=M0_plt, t_max = 100, xticks=true, yticks=true)
 	xlabel!(plt_1pl, L"\mathrm{Time} \;\;\; (day)")
 	ylabel!(plt_1pl, L"\Delta RV\;\;\;\; (m/s)")
@@ -538,55 +597,15 @@ begin
 end
 
 # ╔═╡ cc7006c7-e3ef-470a-b93e-5743a27a32d9
-begin 
+begin
 	""" Calculate RV from t, P, K, e, ω, M0	and C"""
-	function calc_rv_keplerian_plus_const end 
+	function calc_rv_keplerian_plus_const end
 	calc_rv_keplerian_plus_const(t, p::Vector) = calc_rv_keplerian_plus_const(t, p...)
-	
-	function calc_rv_keplerian_plus_const(t, P,K,e,ω,M0,C) 
+
+	function calc_rv_keplerian_plus_const(t, P,K,e,ω,M0,C)
 		calc_rv_keplerian(t, P,K,e,ω,M0) + C
 	end
 end
-
-# ╔═╡ 4f047081-a4d6-414b-9c3e-0eb055c730b3
-"""
-   `ecc_anom_init_guess_danby(mean_anomaly, eccentricity)`
-
-Returns initial guess for the eccentric anomaly for use by itterative solvers of Kepler's equation for bound orbits.  
-
-Based on "The Solution of Kepler's Equations - Part Three"
-Danby, J. M. A. (1987) Journal: Celestial Mechanics, Volume 40, Issue 3-4, pp. 303-312 (1987CeMec..40..303D)
-"""
-function ecc_anom_init_guess_danby(M::Real, ecc::Real)
-	@assert -2π<= M <= 2π
-	@assert 0 <= ecc <= 1.0
-    if  M < zero(M)
-		M += 2π
-	end
-    E = (M<π) ? M + 0.85*ecc : M - 0.85*ecc
-end;
-
-# ╔═╡ 8f700e72-df0f-4e68-85fe-7fbe8da7fbb1
-"""
-   `update_ecc_anom_laguerre(eccentric_anomaly_guess, mean_anomaly, eccentricity)`
-
-Update the current guess for solution to Kepler's equation
-  
-Based on "An Improved Algorithm due to Laguerre for the Solution of Kepler's Equation"
-   Conway, B. A.  (1986) Celestial Mechanics, Volume 39, Issue 2, pp.199-211 (1986CeMec..39..199C)
-"""
-function update_ecc_anom_laguerre(E::Real, M::Real, ecc::Real)
-  #es = ecc*sin(E)
-  #ec = ecc*cos(E)
-  (es, ec) = ecc .* sincos(E)  # Does combining them provide any speed benefit?
-  F = (E-es)-M
-  Fp = one(M)-ec
-  Fpp = es
-  n = 5
-  root = sqrt(abs((n-1)*((n-1)*Fp*Fp-n*F*Fpp)))
-  denom = Fp>zero(E) ? Fp+root : Fp-root
-  return E-n*F/denom
-end;
 
 # ╔═╡ 7047d464-efdd-4315-b930-5b2e8a3d93c5
 md"""
@@ -601,14 +620,14 @@ function find_best_1pl_fit(θinit::AbstractVector, loss::Function; num_init_phas
 	θinit_list = fill(θinit,num_init_phases, num_init_ωs)
 	e_base = sqrt(θinit[3]^2+θinit[4]^2)
 	ω_base = atan(θinit[3],θinit[4])
-	for i in 1:num_init_phases 
+	for i in 1:num_init_phases
 		for j in 1:num_init_ωs
 		Δω = (j-1)/num_init_ωs * 2π
 		θinit_list[i,j][3] = e_base*sin(ω_base + Δω)
 		θinit_list[i,j][4] = e_base*cos(ω_base + Δω)
 		θinit_list[i,j][5] += (i-1)/num_init_phases * 2π - Δω
 		θinit_list[i,j][5] = mod(θinit_list[i,j][5],2π)
-		try 
+		try
 			result_list[i,j] = Optim.optimize(loss, θinit_list[i,j], BFGS(), autodiff=:forward, Optim.Options(f_abstol=f_abstol));
 		catch
 			result_list[i,j] = (;minimum=Inf)
@@ -627,7 +646,7 @@ end
 
 # ╔═╡ 3932fb9d-2897-4d64-8dba-a51799d1aa7a
 """ Convert vector of (P,K,h,k,M0-ω) to vector of (P, K, e, ω, M0) """
-function PKhkωMmω_to_PKeωM(x::Vector) 
+function PKhkωMmω_to_PKeωM(x::Vector)
 	(P, K, h, k, ωmM) = x
 	e = sqrt(h^2+k^2)
 	ω = atan(h,k)
@@ -641,7 +660,7 @@ md"""
 
 # ╔═╡ 71a560d1-efb4-48ad-8a45-ac4fd64537fd
 function make_loss_1pl(data; t_mean=0)
-	function loss_1pl(θ) 
+	function loss_1pl(θ)
 		(P1, K1, h1, k1, Mpω1, C, σj ) = θ
 		( P1, K1, e1, ω1, M1 ) = PKhkωMmω_to_PKeωM([P1, K1, h1, k1, Mpω1])
 		if e1>1 return 1e6*e1 end
@@ -653,6 +672,7 @@ function make_loss_1pl(data; t_mean=0)
 end
 
 # ╔═╡ 9283ac8f-c45e-42e0-ac41-579a3dd35e96
+#=
 function make_neg_logp(
     model::Turing.Model,
     sampler=Turing.SampleFromPrior(),
@@ -667,8 +687,8 @@ function make_neg_logp(
         logp = Turing.getlogp(new_vi)
         return -logp
     end
-
 end
+=#
 
 # ╔═╡ 14cca39b-cded-4108-877f-842c70ff8843
 md"### Generalized Linear Least Squares Fitting"
@@ -710,14 +730,14 @@ begin
                 max::T2
                 norm::T3
         end
-        
+
         function ModifiedJeffreysPriorForScale(s::T1, m::T2) where { T1, T2 }
                 @assert zero(s) < s && !isinf(s)
                 @assert zero(m) < m && !isinf(s)
                 norm = 1/log1p(m/s)         # Ensure proper normalization
                 ModifiedJeffreysPriorForScale{T1,T2,typeof(norm)}(s,m,norm)
         end
-        
+
         function Distributions.rand(rng::AbstractRNG, d::ModifiedJeffreysPriorForScale{T1,T2,T3}) where {T1,T2,T3}
                 u = rand(rng)               # sample in [0, 1]
                 d.scale*(exp(u/d.norm)-1)   # inverse CDF method for sampling
@@ -726,7 +746,7 @@ begin
         function Distributions.logpdf(d::ModifiedJeffreysPriorForScale{T1,T2,T3}, x::Real) where {T1,T2,T3}
                 log(d.norm/(1+x/d.scale))
         end
-        
+
         function Distributions.logpdf(d::ModifiedJeffreysPriorForScale{T1,T2,T3}, x::AbstractVector{<:Real})  where {T1,T2,T3}
             output = zeros(x)
                 for (i,z) in enumerate(x)
@@ -734,10 +754,10 @@ begin
                 end
                 return output
         end
-        
+
         Distributions.minimum(d::ModifiedJeffreysPriorForScale{T1,T2,T3})  where {T1,T2,T3} = zero(T2)
         Distributions.maximum(d::ModifiedJeffreysPriorForScale{T1,T2,T3})  where {T1,T2,T3} = d.max
-        
+
         custom_prob_dist_url = "#" * (PlutoRunner.currently_running_cell_id[] |> string)
 	ModifiedJeffreysPriorForScale
 end
@@ -757,7 +777,7 @@ end;
 # ╔═╡ 44eb9ddd-e04f-4961-b11e-50df17731516
 begin
 	P_guess = 4.230785  # for 51 Peg b
-	h_guess = 0.01      
+	h_guess = 0.01
 	k_guess = 0.01
 	C_guess = mean(data.rv)
 	σj_guess = 3.0
@@ -765,15 +785,15 @@ end;
 
 # ╔═╡ eb83fe44-d67d-43cd-b823-b29b965a17af
 begin
-	param_fit_linear = fit_general_linear_least_squares( 
+	param_fit_linear = fit_general_linear_least_squares(
        calc_design_matrix_circ(P_guess,data.t), PDiagMat(data.σrv), data.rv)
 	K_guess = sqrt(param_fit_linear[1]^2+param_fit_linear[2]^2)
 	phase_guess = atan(param_fit_linear[1],param_fit_linear[2])
-	θinit1 = [P_guess, K_guess, h_guess, k_guess, mod(phase_guess-atan(h_guess, k_guess),2π), C_guess, σj_guess] 
+	θinit1 = [P_guess, K_guess, h_guess, k_guess, mod(phase_guess-atan(h_guess, k_guess),2π), C_guess, σj_guess]
 end
 
 # ╔═╡ 41b2eea0-3049-4fa5-803e-83a54b74ef27
-if try_fit_1pl && @isdefined data 
+if try_fit_1pl && @isdefined data
 	loss_1pl_all_data = make_loss_1pl(data, t_mean=t_mean)
 	result = find_best_1pl_fit(θinit1, loss_1pl_all_data, num_init_phases = 1, num_init_ωs=4)
 end
@@ -792,7 +812,7 @@ if @isdefined result
 		if length(df_star_by_inst[inst,:rv]) == 0 continue end
 		rvoffset = mean(df_star_by_inst[inst,:rv]) .- 30 .* (inst-2)
 		phase = mod.((df_star_by_inst[inst,:bjd].-t_offset)./period_to_phase_by,1.0)
-		scatter!(plt_phase_all,phase, 
+		scatter!(plt_phase_all,phase,
 				df_star_by_inst[inst,:rv].-rvoffset,
 				yerr=collect(df_star_by_inst[inst,:σrv]),
 				markersize=2, markerstrokewidth=0.5,
@@ -813,7 +833,7 @@ if @isdefined result
 end;
 
 # ╔═╡ abc38d23-8665-4377-9a25-9e9c5a10a7bf
-if @isdefined result 
+if @isdefined result
 	model_resid = data.rv.-
 				model_1pl.(data.t,PKhkωMmω_to_PKeωM(result.minimizer[1:5])...,result.minimizer[6], t_mean=t_mean)
 end;
@@ -823,15 +843,15 @@ if @isdefined model_resid
 	plt_resid = plot(legend=:none, widen=true)
 	scatter!(plt_resid,data.t,
 				model_resid,
-				yerr=data.σrv, markercolor=inst_idx) 
+				yerr=data.σrv, markercolor=inst_idx)
 	xlabel!(plt_resid,"Time (d)")
 	ylabel!(plt_resid,"RV (m/s)")
-	
+
 	plt_resid_phase = plot(legend=:none, widen=false)
 	phase = mod.(data.t ./ period_to_phase_by,1.0)
 	scatter!(plt_resid_phase,phase,
 				model_resid,
-				yerr=data.σrv, markercolor=inst_idx) 
+				yerr=data.σrv, markercolor=inst_idx)
 	xlabel!(plt_resid_phase,"Phase")
 	ylabel!(plt_resid_phase,"RV (m/s)")
 	title!(plt_resid,"HD " * star_name * " (residuals to 1 planet model)")
@@ -839,7 +859,7 @@ if @isdefined model_resid
 end
 
 # ╔═╡ bed8ac6f-052a-4cb3-9fb8-5162f1683dd2
-if try_bootstrap_1pl 
+if try_bootstrap_1pl
 	redraw_bootstrap
 	results_bootstrap = Array{Any}(undef,num_bootstrap_samples)
 	rms_bootstrap = zeros(num_bootstrap_samples)
@@ -852,15 +872,15 @@ if try_bootstrap_1pl
 		loss_tmp = make_loss_1pl(data_tmp, t_mean=t_mean)
 		# Attempt to find best-fit parameters results for resampled data
 		results_bootstrap[i] = find_best_1pl_fit(result.minimizer, loss_tmp, num_init_phases=1, num_init_ωs=4)
-		# Evaluate residuals for cross validation 
+		# Evaluate residuals for cross validation
 		if hasfield(typeof(results_bootstrap[i]),:minimizer)
 			idx_test = filter(i->!(i∈idx), 1:length(data.t))
 			pred_1pl = map(t->model_1pl(t,PKhkωMmω_to_PKeωM(results_bootstrap[i].minimizer[1:5])...,results_bootstrap[i].minimizer[6], t_mean=t_mean),view(data.t,idx_test))
-			resid = view(data.rv,idx_test).-pred_1pl			
+			resid = view(data.rv,idx_test).-pred_1pl
 			rms_bootstrap[i] = sqrt(mean(resid.^2))
 			idx_train = filter(i->(i∈idx), 1:length(data.t))
 			pred_1pl = map(t->model_1pl(t,PKhkωMmω_to_PKeωM(results_bootstrap[i].minimizer[1:5])...,results_bootstrap[i].minimizer[6], t_mean=t_mean),view(data.t,idx_train))
-			resid = view(data.rv,idx_train).-pred_1pl			
+			resid = view(data.rv,idx_train).-pred_1pl
 			rms_bootstrap_train[i] = sqrt(mean(resid.^2))
 		end
 	end
@@ -868,17 +888,119 @@ if try_bootstrap_1pl
 end;
 
 # ╔═╡ 4c890552-529c-46e1-bb1e-cbcea7f24672
-if try_bootstrap_1pl 
+if try_bootstrap_1pl
 	plt_bootstrap_resid = plot(xlabel="RMS RV Residuals (m/s)", ylabel="Samples")
-	histogram!(plt_bootstrap_resid, rms_bootstrap, label="Test points", alpha=0.5)
-	histogram!(plt_bootstrap_resid, rms_bootstrap_train, label="Training points", alpha=0.5)
+	histogram!(plt_bootstrap_resid, rms_bootstrap, nbins=40, label="Test points", alpha=0.5)
+	histogram!(plt_bootstrap_resid, rms_bootstrap_train, nbins=40, label="Training points", alpha=0.5)
+end
+
+# ╔═╡ a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
+if @isdefined results_bootstrap
+	plt_title = plot(title = "Bootstrap Results", grid = false, showaxis = false, ticks=:none, bottom_margin = -25Plots.px)
+
+	local Psample = map(r->r.minimizer[1],results_bootstrap)
+	P_mean_bootstrap = mean(Psample)
+	P_std_bootstrap = std(Psample)
+	plt_P_hist = plot(xlabel="P (d)",ylabel="Samples",xticks=
+	optimize_ticks(minimum(Psample),maximum(Psample),k_max=3)[1])
+	histogram!(plt_P_hist,Psample, label=:none, nbins=50)
+
+	local Ksample = map(r->r.minimizer[2],results_bootstrap)
+	K_mean_bootstrap = mean(Ksample)
+	K_std_bootstrap = std(Ksample)
+	plt_K_hist = plot(xlabel="K (m/s)", ylabel="Samples",xticks=
+	optimize_ticks(minimum(Ksample),maximum(Ksample),k_max=3)[1])
+	histogram!(plt_K_hist,Ksample, label=:none, nbins=50)
+
+	local esample = map(r->PKhkωMmω_to_PKeωM(r.minimizer)[3],results_bootstrap)
+	e_mean_bootstrap = mean(esample)
+	e_std_bootstrap = std(esample)
+	plt_e_hist = plot(xlabel="e", ylabel="Samples",xticks=
+	optimize_ticks(minimum(esample),maximum(esample),k_max=3)[1])
+	histogram!(plt_e_hist,esample, label=:none, nbins=50)
+
+	local ωsample = map(r->PKhkωMmω_to_PKeωM(r.minimizer)[4],results_bootstrap)
+	ω_mean_bootstrap = mean(ωsample)
+	ω_std_bootstrap = std(ωsample)
+	plt_ω_hist = plot(xlabel="ω", ylabel="Samples",xticks=
+	optimize_ticks(minimum(ωsample),maximum(ωsample),k_max=3)[1])
+	histogram!(plt_ω_hist,ωsample, label=:none, nbins=50)
+
+	h_mean_bootstrap = mean(esample.*sin.(ωsample))
+	h_std_bootstrap = std(esample.*sin.(ωsample))
+	k_mean_bootstrap = mean(esample.*cos.(ωsample))
+	k_std_bootstrap = std(esample.*cos.(ωsample))
+
+	local Csample = map(r->r.minimizer[6],results_bootstrap)
+	C_mean_bootstrap = mean(Csample)
+	C_std_bootstrap = std(Csample)
+	plt_C_hist = plot(xlabel="C", ylabel="Samples",xticks=
+	optimize_ticks(minimum(Csample),maximum(Csample),k_max=2)[1])
+	histogram!(plt_C_hist,Csample, label=:none, nbins=50)
+
+	local σjsample = map(r->r.minimizer[7],results_bootstrap)
+	σj_mean_bootstrap = mean(σjsample)
+	σj_std_bootstrap = std(σjsample)
+	plt_σj_hist = plot(xlabel="σⱼ", ylabel="Samples",xticks=
+	optimize_ticks(minimum(σjsample),maximum(σjsample),k_max=3)[1])
+	histogram!(plt_σj_hist,σjsample, label=:none, nbins=50)
+
+	plot(plt_title, plt_P_hist, plt_K_hist, plt_e_hist, plt_ω_hist, plt_C_hist, plt_σj_hist, layout=@layout([A{0.01h}; [B C; D E; F G ]]), size=(600,600) )
+end
+
+# ╔═╡ d305c716-080f-4faa-9143-bc75bfa6ce6f
+if try_bootstrap_1pl
+	md"""
+**Q2a:** Compare the distribution of the residuals for the training and test sets to:
+1. the mean measurement uncertainty ($(round(mean(data.σrv),sigdigits=3)) m/s),
+1. the jitter parameter fit to the data ($(round(σj_mean_bootstrap, sigdigits=3)) m/s), and
+1. the quadrature sum of the two ($(round(sqrt(mean(data.σrv)^2+σj_mean_bootstrap^2),sigdigits=3)) m/s).
+"""
+end
+
+# ╔═╡ 5f438b58-2f87-4373-b9ca-e35673b7b46f
+@model rv_kepler_model_v1(t, rv_obs, σ_obs) = begin
+    # Specify Priors
+	P_max = 1000
+	K_max = 1000
+	σj_max = 100
+    P ~ ModifiedJeffreysPriorForScale(1.0, P_max)        # orbital period
+    K ~ ModifiedJeffreysPriorForScale(1.0, K_max)        # RV amplitude
+    #e ~ Truncated(Rayleigh(0.3),0.0,0.999);              # orbital eccentricity
+    #ω ~ Uniform(0, 2π)           # arguement of pericenter
+	h ~ Normal(0,0.3)
+	k ~ Normal(0,0.3)
+    M0_minus_ω ~ Uniform(0,2π)   # mean anomaly at t=0 minus ω
+    C ~ Normal(0,1000.0)         # velocity offset
+    #σ_j ~ ModifiedJeffreysPriorForScale(1.0, σj_max)      # magnitude of RV jitter
+	σ_j ~ LogNormal(log(1.0), 0.5)      # magnitude of RV jitter
+
+    # Transformations to make sampling more efficient
+	e = sqrt(h^2+k^2)
+	ω = atan(h,k)
+    M0 = M0_minus_ω + ω
+
+    # Reject any parameter values that are unphysical, _before_ trying
+    # to calculate the likelihood to avoid errors/assertions
+    if !(0.0 <= e < 1.0)
+        Turing.@addlogprob! -Inf
+        return
+    end
+
+    # Likelihood
+    # Calculate the true velocity given model parameters
+    rv_true = calc_rv_keplerian_plus_const.(t, P,K,e,ω,M0,C)
+
+    # Specify measurement model
+    σ_eff = sqrt.(σ_obs.^2 .+ σ_j.^2)
+    rv_obs ~ MvNormal(rv_true, σ_eff )
 end
 
 # ╔═╡ 5d631862-97e7-4ccd-ab6f-a875989dde99
 posterior_1 = rv_kepler_model_v1(data.t,data.rv,data.σrv);
 
 # ╔═╡ 9371ce38-9cb5-4664-ae24-5554f4847868
-if mcmc.run 
+if mcmc.run
 	if (Sys.iswindows() || (Threads.nthreads()==1))
         chains = sample(posterior_1, NUTS(), mcmc.num_steps_per_chain, discard_initial=mcmc.num_steps_burn_in_per_chain, init_params = θinit_mcmc)
 	else
@@ -894,20 +1016,20 @@ end
 
 # ╔═╡ 6c2ab644-4799-4bf3-aac0-431bf399dab0
 if mcmc.run
-let 
+let
 	plt_title = plot(title = "MCMC Trace Plots", grid = false, showaxis = false, ticks=:none, bottom_margin = -25Plots.px)
     plt_P = traceplot(chains,:P, leftmargin=15Plots.px)
 	ylabel!(plt_P, "P")
 	title!(plt_P,"")
 	plt_K = traceplot(chains,:K)
-	ylabel!(plt_K, "K") 
+	ylabel!(plt_K, "K")
 	title!(plt_K,"")
-    plt_e = traceplot(chains,:h, leftmargin=15Plots.px)
-	ylabel!(plt_e, "h")
-	title!(plt_e,"")
-    plt_ω = traceplot(chains,:k)
-	ylabel!(plt_ω, "k")
-	title!(plt_ω,"")
+    plt_h = traceplot(chains,:h, leftmargin=15Plots.px)
+	ylabel!(plt_h, "h")
+	title!(plt_h,"")
+    plt_k = traceplot(chains,:k)
+	ylabel!(plt_k, "k")
+	title!(plt_k,"")
     plt_ωpM = traceplot(chains,:M0_minus_ω, leftmargin=15Plots.px)
 	ylabel!(plt_ωpM, "M₀-ω")
 	title!(plt_ωpM, "")
@@ -915,109 +1037,21 @@ let
 	ylabel!(plt_σj, "σⱼ")
 	title!(plt_σj, "")
 
-    plot(plt_title,plt_P, plt_K, plt_e, plt_ω, plt_ωpM, plt_σj, layout=@layout([A{0.01h}; [B C; D E; F G]]), size=(600,800) )
+    plot(plt_title,plt_P, plt_K, plt_h, plt_k, plt_ωpM, plt_σj, layout=@layout([A{0.01h}; [B C; D E; F G]]), size=(600,800) )
 end
-end
-
-# ╔═╡ 60a09c22-4100-41e9-8ecc-bfefde1492e0
-if mcmc.run
-	summarystats(chains[:,:,chain_id])
-end
-
-# ╔═╡ c7fe279b-d978-4b97-a031-bb933b64d90f
-if mcmc.run
-	quantile(chains[:,:,chain_id])
-end
-
-# ╔═╡ a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
-if @isdefined results_bootstrap
-	plt_title = plot(title = "Bootstrap Results", grid = false, showaxis = false, ticks=:none, bottom_margin = -25Plots.px)
-	
-	local Psample = map(r->r.minimizer[1],results_bootstrap)
-	P_mean_bootstrap = mean(Psample)
-	P_std_bootstrap = std(Psample)
-	plt_P_hist = plot(xlabel="P (d)",ylabel="Samples",xticks=
-	optimize_ticks(minimum(Psample),maximum(Psample),k_max=3)[1])
-	histogram!(plt_P_hist,Psample, label=:none, nbins=50)
-	
-	local Ksample = map(r->r.minimizer[2],results_bootstrap)
-	K_mean_bootstrap = mean(Ksample)
-	K_std_bootstrap = std(Ksample)
-	plt_K_hist = plot(xlabel="K (m/s)", ylabel="Samples",xticks=
-	optimize_ticks(minimum(Ksample),maximum(Ksample),k_max=3)[1])
-	histogram!(plt_K_hist,Ksample, label=:none, nbins=50)
-	
-	local esample = map(r->PKhkωMmω_to_PKeωM(r.minimizer)[3],results_bootstrap)
-	e_mean_bootstrap = mean(esample)
-	e_std_bootstrap = std(esample)
-	plt_e_hist = plot(xlabel="e", ylabel="Samples",xticks=
-	optimize_ticks(minimum(esample),maximum(esample),k_max=3)[1])
-	histogram!(plt_e_hist,esample, label=:none, nbins=50)
-	
-	local ωsample = map(r->PKhkωMmω_to_PKeωM(r.minimizer)[4],results_bootstrap)
-	ω_mean_bootstrap = mean(ωsample)
-	ω_std_bootstrap = std(ωsample)
-	plt_ω_hist = plot(xlabel="ω", ylabel="Samples",xticks=
-	optimize_ticks(minimum(ωsample),maximum(ωsample),k_max=3)[1])
-	histogram!(plt_ω_hist,ωsample, label=:none, nbins=50)
-
-	h_mean_bootstrap = mean(esample.*sin.(ωsample))
-	h_std_bootstrap = std(esample.*sin.(ωsample))
-	k_mean_bootstrap = mean(esample.*cos.(ωsample))
-	k_std_bootstrap = std(esample.*cos.(ωsample))
-	
-	local Csample = map(r->r.minimizer[6],results_bootstrap)
-	C_mean_bootstrap = mean(Csample)
-	C_std_bootstrap = std(Csample)
-	plt_C_hist = plot(xlabel="C", ylabel="Samples",xticks=
-	optimize_ticks(minimum(Csample),maximum(Csample),k_max=2)[1])
-	histogram!(plt_C_hist,Csample, label=:none, nbins=50)
-	
-	local σjsample = map(r->r.minimizer[7],results_bootstrap)
-	σj_mean_bootstrap = mean(σjsample)
-	σj_std_bootstrap = std(σjsample)
-	plt_σj_hist = plot(xlabel="σⱼ", ylabel="Samples",xticks=
-	optimize_ticks(minimum(σjsample),maximum(σjsample),k_max=3)[1])
-	histogram!(plt_σj_hist,σjsample, label=:none, nbins=50)
-		
-	plot(plt_title, plt_P_hist, plt_K_hist, plt_e_hist, plt_ω_hist, plt_C_hist, plt_σj_hist, layout=@layout([A{0.01h}; [B C; D E; F G ]]), size=(600,600) )
-end
-
-# ╔═╡ d305c716-080f-4faa-9143-bc75bfa6ce6f
-if try_bootstrap_1pl 
-	md"""
-**Q2a:** Compare the distribution of the residuals for the training and test sets to:
-1. the mean measurement uncertainty ($(round(mean(data.σrv),sigdigits=3)) m/s),
-1. the jitter parameter fit to the data ($(round(σj_mean_bootstrap, sigdigits=3)) m/s), and
-1. the quadrature sum of the two ($(round(sqrt(mean(data.σrv)^2+σj_mean_bootstrap^2),sigdigits=3)) m/s). 
-"""
-end
-
-# ╔═╡ c7d3155c-5124-4724-bc7a-f1e2dcde879b
-if try_bootstrap_1pl && (@isdefined chains)
-md"""
-**Q3c:** Compare the 
-- mean K ($(round(mean(chains[:K]),sigdigits=4)) m/s) and 
-- sample standard deviation of K ($(round(std(chains[:K]),sigdigits=4)) m/s)
-estimated from the MCMC simulatiosn to the:
-- mean K ($(round(K_mean_bootstrap,sigdigits=4)) m/s) and 
-- sample standard deviation ($(round(K_std_bootstrap,sigdigits=4)) m/s)
-estimated from the bootstrap simulations.  
-Which method results in a larger estimated uncertainty?
-"""
 end
 
 # ╔═╡ e2905cac-57f9-4da9-9160-828f46d72bb6
 if mcmc.run
-	let 
+	let
 	plt_title = plot(title = "MCMC Posterior Samples", grid = false, showaxis = false, ticks=:none, bottom_margin = -25Plots.px)
     plt_P = histogram(get(chains,:P)[:P], nbins = 40, xticks=
 	optimize_ticks(maximum(get(chains,:P)[:P]),minimum(get(chains,:P)[:P]),k_max=3)[1], label=:none, alpha=0.6, leftmargin=15Plots.px)
-	xlabel!(plt_P, "P (d)") 
+	xlabel!(plt_P, "P (d)")
 	ylabel!(plt_P, "")
 	title!(plt_P,"")
 	plt_K = histogram(chains,:K,nbins = 40 )
-	xlabel!(plt_K, "K (m/s)") 
+	xlabel!(plt_K, "K (m/s)")
 	title!(plt_K,"")
 	chains_e = sqrt.(get(chains,:h)[:h].^2 .+get(chains,:k)[:k].^2)
 	plt_e = histogram(chains_e, nbins = 40, xlabel="e", ylabel="", title="", leftmargin=15Plots.px, label=:none, alpha=0.6)
@@ -1036,6 +1070,30 @@ if mcmc.run
 
     plot(plt_title,plt_P, plt_K, plt_e, plt_ω, plt_ωpM, plt_σj, layout=@layout([A{0.01h}; [B C; D E; F G]]), size=(600,800) )
 end
+end
+
+# ╔═╡ 60a09c22-4100-41e9-8ecc-bfefde1492e0
+if mcmc.run
+	summarystats(chains[:,:,chain_id])
+end
+
+# ╔═╡ c7fe279b-d978-4b97-a031-bb933b64d90f
+if mcmc.run
+	quantile(chains[:,:,chain_id])
+end
+
+# ╔═╡ c7d3155c-5124-4724-bc7a-f1e2dcde879b
+if ( @isdefined chains ) && try_bootstrap_1pl && 
+md"""
+**Q3c:** Compare the
+- mean K ($(round(mean(chains[:K]),sigdigits=4)) m/s) and
+- sample standard deviation of K ($(round(std(chains[:K]),sigdigits=4)) m/s)
+estimated from the MCMC simulations to the:
+- mean K ($(round(K_mean_bootstrap,sigdigits=4)) m/s) and
+- sample standard deviation ($(round(K_std_bootstrap,sigdigits=4)) m/s)
+estimated from the bootstrap simulations.
+Which method results in a larger estimated uncertainty?
+"""
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2784,6 +2842,7 @@ version = "1.4.1+0"
 # ╟─10f95d69-9cd8-47d4-a534-8de09ea3b216
 # ╟─b821a2ae-bf16-4018-b85a-ff1713f40103
 # ╠═2f09622b-838c-42df-a74f-81960916fae2
+# ╟─c4f683e2-ce56-45a7-b483-7a8a658cf342
 # ╟─21834080-14de-4926-9766-5a3ad994e2a1
 # ╟─3c14ec5c-e72a-4af4-8859-fd7a0bf91409
 # ╠═fcf19e04-3e35-4a01-8036-fd5b283fdd37
@@ -2801,8 +2860,10 @@ version = "1.4.1+0"
 # ╟─844ede38-9596-47a6-b30b-9eff622a2330
 # ╟─cf582fc9-07b1-4d09-b379-2576924c026b
 # ╠═9007735e-45c2-4a96-8ea5-03d7b8b58410
+# ╟─70a862c4-a157-4e3b-b447-4a746994ca34
 # ╟─ba869a69-167e-4a1c-92af-e8592f6fca3d
 # ╠═220caa90-90e8-4a52-a133-e37bb9cf5b50
+# ╟─93d125da-67d8-4dba-98b5-405c684eeb9a
 # ╟─11469768-34af-470a-b431-c47b17d6a586
 # ╟─710af3aa-b842-43b2-ab96-cda80b2a2ee0
 # ╟─b89645c8-6574-4f53-b40e-5c4e4236671e
@@ -2814,8 +2875,10 @@ version = "1.4.1+0"
 # ╟─4c890552-529c-46e1-bb1e-cbcea7f24672
 # ╟─d305c716-080f-4faa-9143-bc75bfa6ce6f
 # ╠═0737daef-b8f1-49ef-9a06-5cf1b716f719
+# ╟─707601dc-797d-4332-8538-f7a358113bc9
 # ╟─10a2b5b5-6a84-4b1e-a5f6-dd2434541edb
 # ╠═390d9fc3-22f1-4e46-8164-4fc33f494035
+# ╟─2eb9bbc8-1722-459f-aa57-a55dd54cebd0
 # ╟─8743b110-ed40-4718-8fc3-e296ee8339f2
 # ╟─67f3aef3-f34f-4e67-8ff4-adb8aa0284db
 # ╟─6a141962-d4d6-4f27-b94e-2d0aee0740c7
@@ -2833,6 +2896,7 @@ version = "1.4.1+0"
 # ╟─e2905cac-57f9-4da9-9160-828f46d72bb6
 # ╟─7e1a46fd-392c-412c-8a5c-e54765112564
 # ╠═a935174a-1057-4ad6-9b92-84981f4a4bb2
+# ╟─b995e3be-8c50-489b-b62f-97f15d43b899
 # ╟─eb96986f-78fe-4a28-9ccf-6d3a66f063a6
 # ╟─3cf57331-688b-4b71-83f1-51cf53cfb0ee
 # ╟─7a2e757b-4117-455d-ba41-6205ec4746dd
@@ -2840,13 +2904,24 @@ version = "1.4.1+0"
 # ╟─c7fe279b-d978-4b97-a031-bb933b64d90f
 # ╟─121869f2-c78d-4b46-bd5d-9d97a2f68e54
 # ╠═96fc2d52-5128-483c-9962-817f1b013065
+# ╟─aea805f0-e986-4fde-a313-34b7ff70a4af
 # ╟─c7d3155c-5124-4724-bc7a-f1e2dcde879b
-# ╟─abad7a4d-0bb8-4c8f-bdec-f9e0d2839fd7
+# ╟─0aaa6d1e-2ad1-4e0b-a865-6fef5f61d052
+# ╟─f6bc0968-0397-40f3-ae1a-6f93caa6f77d
+# ╠═70f74254-6ea7-4034-a37c-f3b46008b556
+# ╟─49c5ef16-4e2d-4971-a969-b6811eb4f5c6
+# ╟─1670fb35-7106-40c7-9397-c9dc145f3941
 # ╠═afadd762-5eb8-47ca-82b3-0862299e5fb9
+# ╟─3ca97dca-59fc-47a6-b59b-b6f45670571c
 # ╟─e325a28f-c8ef-4f0c-8f29-e9f4c34ea746
 # ╠═244eccc2-463d-453b-bc30-1decbf0eed9a
+# ╟─434e0498-d0b2-4b81-8000-0d0cd60efbcc
 # ╟─bb1e1664-0c67-4aea-9e76-37669d253592
 # ╠═66f4acf5-152c-4792-9d7f-9a0ddb6459f6
+# ╟─febba1c9-a166-475b-9344-1a7d7881b7fa
+# ╟─dedb1ece-059f-4687-804b-93d82fadf08b
+# ╠═781b21ac-5b21-413f-b22d-a5ba81e4b81c
+# ╟─ff200532-9bae-4e3f-b05e-b192c942324b
 # ╟─b60aadbc-4e70-414e-9fdc-c3b042cb17bf
 # ╠═8be9bf52-a0a3-11ec-045f-3962ad227049
 # ╟─69f40924-6b24-4014-8c1b-f600a0759aab
