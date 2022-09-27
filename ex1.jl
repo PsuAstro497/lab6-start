@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.12
+# v0.19.11
 
 using Markdown
 using InteractiveUtils
@@ -122,7 +122,7 @@ end
 
 # ╔═╡ d79fc353-e30e-49ab-aa8e-9ba4b76a879b
 md"""
-Select star to analyze.
+Below we select the name of the star to analyze, HD 217014, more commonly known as 51 Pegasi.
 """
 
 # ╔═╡ 9404128d-0638-45ba-aaf6-a6ea47489b49
@@ -1083,7 +1083,7 @@ if mcmc.run
 end
 
 # ╔═╡ c7d3155c-5124-4724-bc7a-f1e2dcde879b
-if ( @isdefined chains ) && try_bootstrap_1pl && 
+if ( @isdefined chains ) && try_bootstrap_1pl 
 md"""
 **Q3c:** Compare the
 - mean K ($(round(mean(chains[:K]),sigdigits=4)) m/s) and
@@ -1138,7 +1138,7 @@ Turing = "~0.21.12"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.3"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]
@@ -1469,7 +1469,7 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 [[deps.DualNumbers]]
@@ -2888,8 +2888,8 @@ version = "1.4.1+0"
 # ╟─1af9fbff-4786-415c-b1e6-ecc580e22ef2
 # ╟─fc8d934c-7557-4011-a1e1-961bfd4e11a1
 # ╠═9371ce38-9cb5-4664-ae24-5554f4847868
-# ╟─bd82489d-5156-4d88-98ea-8f05eab22e00
 # ╟─86aa15f3-b525-4c77-ab01-159b8e977314
+# ╟─bd82489d-5156-4d88-98ea-8f05eab22e00
 # ╟─962d20ef-8446-4894-80df-725c1bac04be
 # ╟─6c2ab644-4799-4bf3-aac0-431bf399dab0
 # ╟─300a1ea8-023e-4c38-8a7e-1bc9ac62c311
