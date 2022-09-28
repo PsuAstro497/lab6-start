@@ -1,6 +1,12 @@
 ### A Pluto.jl notebook ###
 # v0.19.11
 
+#> [frontmatter]
+#> title = "Lab 6: Explanatory Data Analysis"
+#> date = "2022-09-28"
+#> tags = ["Penn State", "Astro497", "Fall 2022", "exoplanets", "data science", "lab"]
+#> description = "Measuring Exoplanet Masses "
+
 using Markdown
 using InteractiveUtils
 
@@ -319,7 +325,7 @@ For future comparisons, it will be useful to compute the mean and standard devia
 md"""
 Based on the histogram above, we see that we have a healthy fraction of the RV observations are available to serve as a test set for cross validation of our model.
 
-The next figure shows the distribution of the RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate the RMS residuals separately for the training points (i.e., the RV measurements used for fitting the model in a given bootstrap sample) and the test point (i.e., the points excluded from fitting the model in a given bootstrap sample).
+The next figure shows the distribution of the RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate the RMS residuals separately for the training points (i.e., the RV measurements used for fitting the model in a given bootstrap sample) and the test points (i.e., the points excluded from fitting the model in a given bootstrap sample).
 """
 
 # ╔═╡ 0737daef-b8f1-49ef-9a06-5cf1b716f719
@@ -399,7 +405,7 @@ While the bootstrap method has some intuitive appeal, the theoretical basis is n
 
 # ╔═╡ 6a141962-d4d6-4f27-b94e-2d0aee0740c7
 protip(md"""
-There are some scenarios in which the bootstrap can significantly underestimate the true uncertainties (e.g., when the time span of observations is not much longer than the orbital period of the planet).  For this dataset an model, the bootstrap would be expected to give reasonable uncertainty estimates.
+There are some scenarios in which the bootstrap can significantly underestimate the true uncertainties (e.g., when the time span of observations is not much longer than the orbital period of the planet, or if there were so few observations that excluding some observations significantly altered how evenly the orbit sampled in terms of its orbit phase).  For this dataset and model there are lots of observations spanning many orbits periods, and the bootstrap would be expected to give reasonable uncertainty estimates.
 """)
 
 # ╔═╡ 5c9f6b52-87d3-4971-90f4-3f953f7bce7f
