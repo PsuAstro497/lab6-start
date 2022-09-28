@@ -1013,7 +1013,9 @@ Below, we'll check the fraction of RV observations were not included in the mode
 """
 
 # ╔═╡ 81fcda13-7b39-48ac-8872-d7a787796c35
-histogram(testset_length./length(data.t), xlabel="Fraction of RV observations avaliable as a test set", ylabel="Number of samples", label=:none)
+if @isdefined testset_length
+	histogram(testset_length./length(data.t), xlabel="Fraction of RV observations avaliable as a test set", ylabel="Number of samples", label=:none)
+end
 
 # ╔═╡ a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
 if @isdefined results_bootstrap
@@ -1079,7 +1081,9 @@ if @isdefined results_bootstrap
 end
 
 # ╔═╡ 696ccc8a-6bae-4d0f-be33-55c60b21dffc
-bootstrap_results_df
+if @isdefined bootstrap_results_df
+   bootstrap_results_df
+end
 
 # ╔═╡ d305c716-080f-4faa-9143-bc75bfa6ce6f
 if try_bootstrap_1pl
