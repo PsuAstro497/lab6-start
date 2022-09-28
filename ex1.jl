@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.12
+# v0.19.11
 
 using Markdown
 using InteractiveUtils
@@ -308,6 +308,11 @@ The distribution of the resulting fits to the bootstrap samples provides an esti
 The figures below visualize the results of the bootstrap simulations.  
 You can repeat the calculations (with a different set of pseudorandom numbers) by clicking the "Redraw bootstrap samples" button above.
 If you'd like to get smoother histograms below (and more precise estimates of the mean and standard deviation of the parameters), then you can boost the number of bootstrap samples in the box above.
+"""
+
+# ╔═╡ 933facd7-a1fc-43bb-86b4-710c88a60a23
+md"""
+For future comparisons, it will be useful to compute the mean and standard deviation of the best-fit parameter values from each bootstrap sample. 
 """
 
 # ╔═╡ 77be89d0-9c2d-40b6-9f76-1ab45cb5a7a9
@@ -1055,8 +1060,13 @@ if @isdefined results_bootstrap
 	optimize_ticks(minimum(σjsample),maximum(σjsample),k_max=3)[1])
 	histogram!(plt_σj_hist,σjsample, label=:none, nbins=50)
 
+	bootstrap_results_df = DataFrame(:parameter=>[:P, :K, :h, :k, :e, :ω, :C, :σj], :mean=>[P_mean_bootstrap, K_mean_bootstrap, h_mean_bootstrap, k_mean_bootstrap, e_mean_bootstrap, ω_mean_bootstrap, C_mean_bootstrap, σj_mean_bootstrap], :std=>[P_std_bootstrap,K_std_bootstrap,h_std_bootstrap,k_std_bootstrap,e_std_bootstrap,ω_std_bootstrap,C_std_bootstrap,σj_std_bootstrap])
+	
 	plot(plt_title, plt_P_hist, plt_K_hist, plt_e_hist, plt_ω_hist, plt_C_hist, plt_σj_hist, layout=@layout([A{0.01h}; [B C; D E; F G ]]), size=(600,600) )
 end
+
+# ╔═╡ 696ccc8a-6bae-4d0f-be33-55c60b21dffc
+bootstrap_results_df
 
 # ╔═╡ d305c716-080f-4faa-9143-bc75bfa6ce6f
 if try_bootstrap_1pl
@@ -1259,7 +1269,7 @@ Turing = "~0.21.12"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.0"
+julia_version = "1.7.3"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]
@@ -1594,7 +1604,7 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 [[deps.DualNumbers]]
@@ -1628,10 +1638,10 @@ uuid = "c87230d0-a227-11e9-1b43-d7ebe4e7570a"
 version = "0.4.1"
 
 [[deps.FFMPEG_jll]]
-deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers", "LAME_jll", "Libdl", "Ogg_jll", "OpenSSL_jll", "Opus_jll", "Pkg", "Zlib_jll", "libaom_jll", "libass_jll", "libfdk_aac_jll", "libvorbis_jll", "x264_jll", "x265_jll"]
-git-tree-sha1 = "ccd479984c7838684b3ac204b716c89955c76623"
+deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers", "LAME_jll", "Libdl", "Ogg_jll", "OpenSSL_jll", "Opus_jll", "PCRE2_jll", "Pkg", "Zlib_jll", "libaom_jll", "libass_jll", "libfdk_aac_jll", "libvorbis_jll", "x264_jll", "x265_jll"]
+git-tree-sha1 = "40c63abc94311b4e2bff4cd9a6a59bda1873c95b"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
-version = "4.4.2+0"
+version = "4.4.2+1"
 
 [[deps.FFTW]]
 deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
@@ -1754,10 +1764,10 @@ uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
 version = "0.21.0+0"
 
 [[deps.Glib_jll]]
-deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "a32d672ac2c967f3deb8a81d828afc739c838a06"
+deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "61c566fbd29b42c9a58e7998ff69b2268a205364"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.68.3+2"
+version = "2.74.0+0"
 
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1846,9 +1856,9 @@ version = "0.14.5"
 
 [[deps.IntervalSets]]
 deps = ["Dates", "Random", "Statistics"]
-git-tree-sha1 = "076bb0da51a8c8d1229936a1af7bdfacd65037e1"
+git-tree-sha1 = "3f91cd3f56ea48d4d2a75c2a65455c5fc74fa347"
 uuid = "8197267c-284f-5f27-9208-e0e47529a953"
-version = "0.7.2"
+version = "0.7.3"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -2237,11 +2247,9 @@ git-tree-sha1 = "85f8e6578bf1f9ee0d11e7bb1b1456435479d47c"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 version = "1.4.1"
 
-[[deps.PCRE_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
-uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
-version = "8.44.0+0"
+[[deps.PCRE2_jll]]
+deps = ["Artifacts", "Libdl"]
+uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 
 [[deps.PDMats]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
@@ -3003,6 +3011,8 @@ version = "1.4.1+0"
 # ╟─ebec340e-297f-44c1-8095-60ea68dd530c
 # ╟─bed8ac6f-052a-4cb3-9fb8-5162f1683dd2
 # ╟─a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
+# ╟─933facd7-a1fc-43bb-86b4-710c88a60a23
+# ╠═696ccc8a-6bae-4d0f-be33-55c60b21dffc
 # ╟─a4c66015-a932-44c4-ae20-dcced50d75f4
 # ╟─81fcda13-7b39-48ac-8872-d7a787796c35
 # ╟─77be89d0-9c2d-40b6-9f76-1ab45cb5a7a9
