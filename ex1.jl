@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.11
+# v0.19.12
 
 using Markdown
 using InteractiveUtils
@@ -40,7 +40,10 @@ TableOfContents()
 # ╔═╡ 921f13df-bc87-4d1f-8429-90cd234a65a1
 md"""
 ### Overview 
-In this lab, you'll analyze radial velocity (RV) observations of 51 Pegasi, the first sun-like star discovered to host an exoplanet.  First, you'll fit a Keplerian model to data from one observatory/instrument.  Then you'll use both bootstrap and MCMC methods to obtain estimates of the uncertainties in the RV amplitude parameter, $K$, which is proportional to the planet's mass.  Then you'll repeat the analysis using data from a second observatory/instrument.  You'll compare the uncertainty estimates from each method and instrument, so as to develop intuition for how measurement uncertainties from different methods and datasets compare.
+In this lab, you'll analyze radial velocity (RV) observations of 51 Pegasi, the first sun-like star discovered to host an exoplanet.  
+First, you'll fit a Keplerian model to data from one observatory/instrument.  
+Then, you'll use both bootstrap and MCMC methods to obtain estimates of the uncertainties in the RV amplitude parameter, $K$, which is proportional to the planet's mass.  
+Next, you'll repeat the analysis using data from a second observatory/instrument.  Finally, you'll compare the uncertainty estimates from each method and instrument, so as to develop intuition for how measurement uncertainties from the different methods and datasets compare.
 """
 
 # ╔═╡ 4ce8dd30-9b3e-4411-9a43-dcd77149aea2
@@ -210,7 +213,10 @@ md"""
 response_1a = missing
 
 # ╔═╡ c4f683e2-ce56-45a7-b483-7a8a658cf342
-ismissing(response_1a) && still_missing()
+if ismissing(response_1a)  still_missing() end
+
+# ╔═╡ 8385686d-fd74-4ff2-92ca-eff3f60ba112
+hint(df_star_by_inst |> @map( {:inst=>instrument_label[_.inst], :num_obs=>_.nobs_inst}) |> DataFrame)
 
 # ╔═╡ 21834080-14de-4926-9766-5a3ad994e2a1
 md"""
@@ -258,7 +264,7 @@ md"""
 response_1b = missing
 
 # ╔═╡ 70a862c4-a157-4e3b-b447-4a746994ca34
-ismissing(response_1b) && still_missing()
+if ismissing(response_1b) still_missing() end
 
 # ╔═╡ ba869a69-167e-4a1c-92af-e8592f6fca3d
 md"""
@@ -269,7 +275,7 @@ md"""
 response_1c = missing
 
 # ╔═╡ 93d125da-67d8-4dba-98b5-405c684eeb9a
-ismissing(response_1c) && still_missing()
+if ismissing(response_1c)  still_missing() end
 
 # ╔═╡ 11469768-34af-470a-b431-c47b17d6a586
 Markdown.parse("""
@@ -294,20 +300,33 @@ Run bootstrap analysis with 1-planet model: $(@bind try_bootstrap_1pl CheckBox()
 
 # ╔═╡ ebec340e-297f-44c1-8095-60ea68dd530c
 md"""
-Once you've selected the observatory/instrument whose data you want to analyze, check the box above to trigger the cell below to generate many synthetic datasets by draw "bootstrap" samples from the actual data (with replacement), to attempt to find the best-fit parameters for each synthetic dataset.  We can visualize the distribution of the resulting fits to the bootstrap simulations to get an estimate of the uncertainties in the model parameters.  If you'd like to get smoother histograms below (and more precise estimates of the mean and standard deviation of the parameters), then you can boost the number of bootstrap samples.
+Once you've selected the observatory/instrument whose data you want to analyze, check the box above to trigger the cell below to perform a "bootstrap" analysis.
+In a bootstrap analysis, we generate many synthetic datasets by drawing samples from the actual data (with replacement).  
+For each synthetic data set, we will attempt to compute the best-fit parameters. 
+The distribution of the resulting fits to the bootstrap samples provides an estimate of the uncertainties in the model parameters.  
+
+The figures below visualize the results of the bootstrap simulations.  
+You can repeat the calculations (with a different set of pseudorandom numbers) by clicking the "Redraw bootstrap samples" button above.
+If you'd like to get smoother histograms below (and more precise estimates of the mean and standard deviation of the parameters), then you can boost the number of bootstrap samples in the box above.
 """
 
-# ╔═╡ 7296def6-31c0-4df2-b6ca-2fd953bdfb1f
+# ╔═╡ 77be89d0-9c2d-40b6-9f76-1ab45cb5a7a9
 md"""
-### Cross-validation
-We can compute the distribution of RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate this separately for the points used for fitting the model and the points excluded from fitting the model.
+Based on the histogram above, we see that we have a healthy fraction of the RV observations are available to serve as a test set for cross validation of our model.
+
+The next figure shows the distribution of the RMS of residuals between the RV measurements and the predictions from the best-fit model for each bootstrap sample.  We evaluate the RMS residuals separately for the training points (i.e., the RV measurements used for fitting the model in a given bootstrap sample) and the test point (i.e., the points excluded from fitting the model in a given bootstrap sample).
 """
 
 # ╔═╡ 0737daef-b8f1-49ef-9a06-5cf1b716f719
 response_2a = missing
 
 # ╔═╡ 707601dc-797d-4332-8538-f7a358113bc9
-ismissing(response_2a) && still_missing()
+if ismissing(response_2a)  still_missing() end
+
+# ╔═╡ 6f044344-d418-463b-a19f-39797448502e
+hint(md"""If you have two independant, normally distributed random variables $X\sim~N(\mu_X,\sigma_X^2)$ and $Y\sim~N(\mu_Y,\sigma_Y^2)$, then the sum $Z=X+Y$ is also normally distributed $Z\sim~N(\mu_X+\mu_Y, \sigma_X^2+\sigma_Y^2$.  
+Thus, if our measurements are contaminated by two sources of noise (e.g., measurement uncertainties and intrinsic stellar variability) that can be treated as independent, normally-distributed, then we expect the residuals to be normally distributed with a variance that's the sum of the variances from each noise source separately.  
+The "quadrature sum" of the mean measurement uncertainty ($\left<\sigma_{RV}\right>$) and jitter parameter ($\sigma_j$) means $\sqrt{\left<\sigma_{RV}\right>^2 + \sigma_j^2}$.""")
 
 # ╔═╡ 10a2b5b5-6a84-4b1e-a5f6-dd2434541edb
 md"""
@@ -318,7 +337,50 @@ md"""
 response_2b = missing
 
 # ╔═╡ 2eb9bbc8-1722-459f-aa57-a55dd54cebd0
-ismissing(response_2b) && still_missing()
+if ismissing(response_2b)  still_missing() end
+
+# ╔═╡ 13986b47-4a12-4fe0-9a7c-5930c6f36b48
+md"""
+## Comparison of methods
+"""
+
+# ╔═╡ a60c14c0-8906-446c-8c78-0df9cf434b8a
+md"""
+While the bootstrap method has some intuitive appeal, the theoretical basis is not as strong as performing proper Bayesian inference.  
+Nevertheless, it can still be quite useful.
+It's common for approximate algorithms to give reasonably good results much more quickly than exact algorithms.  
+Even if it is possible to apply an exact algorithm, sometimes the exact algorithms only give better results than an approximate algorithm after running the exact algorithm for significantly longer.  
+In this lab, the bootstrap serves as an approximate algorithm and MCMC is exact algorithm.  
+The figure below illustrates this trade-off.  
+(Think of it as a cartoon, rather than a quantitative comparison.)
+"""
+
+# ╔═╡ 083da0e3-4a90-4ccd-9bcf-cbb9d49bb8d9
+let
+	x = 0:10:1_000
+	plt = plot()
+	y_exact = x.^(-1//2)
+	y_approx = 0.05 .+ x.^(-1)
+	plot(x,y_exact, label="Exact Alg")
+	plot!(x,y_approx, label="Approximate Alg")
+	xlabel!("Computational Cost")
+	ylabel!("Distaince between the true posterior\nand approximate posterior")
+	title!("Tradeoff between exact & approximate algorithms")
+end
+
+# ╔═╡ 42f74f12-b8fb-4def-b81a-a7507a07f195
+md"""
+Why could boostrap give usable results for less computational cost than MCMC?  
+
+With bootstrap resampling, each synthetic dataset is drawn independently of every other synthetic dataset.  
+That means you can get a rough estimate of the mean and standard deviation of the best-fit parameter values from analyzing a relatively small number (e.g., ~100) synthetic datasets. 
+
+In contrast, the parameter values of a Markov chain are correlated from one step to the next.  
+With just a hundred iterations, the results are likely to be biased by the initial parameter values.  
+Even once we're past this *burn-in* phase, it may take several steps (sometimes even hundreds or thousands of steps) to generate effectively independent samples. 
+Therefore, building up a sample of ~100 effectively independent samples from the posterior may require many times (potentialy orders of magnitudes) as many iterations.
+
+"""
 
 # ╔═╡ 8743b110-ed40-4718-8fc3-e296ee8339f2
 md"""
@@ -370,6 +432,12 @@ md"""
 Next, we'll inspect the distributions of the marginal posterior for several of the model parameters.
 """
 
+# ╔═╡ 25a13214-e589-4c77-bde5-211c59581af2
+md"""
+If you've run multiple Markov chains, then you can evaluate how similar (or different) the results are from each Markov chain.  
+You can do that graphically be looking at the histograms above.  
+"""
+
 # ╔═╡ 7e1a46fd-392c-412c-8a5c-e54765112564
 md"""
 **Q3a:** Do you notice significant differences in the traces of model parameters from the different Markov chains (in different colors)?  Or in the histograms of marginal posterior distributions?  If so, try running the Markov chains longer.  How many steps per chain did you need to run before you no longer see evidence of nonconvergence?  (If the run time starts to exceed ~5 minutes, then you can report the best you can with the results you can get quickly.  You're welcome to run much longer chains (e.g., while you take a break or go eat), but that's not required.)
@@ -379,7 +447,7 @@ md"""
 response_3a = missing
 
 # ╔═╡ b995e3be-8c50-489b-b62f-97f15d43b899
-ismissing(response_3a) && still_missing()
+if ismissing(response_3a)  still_missing() end
 
 # ╔═╡ eb96986f-78fe-4a28-9ccf-6d3a66f063a6
 md"""
@@ -392,16 +460,30 @@ md"Chain to calculate summary statistics for: $(@bind chain_id Slider(1:mcmc.num
 # ╔═╡ 7a2e757b-4117-455d-ba41-6205ec4746dd
 md"**Summary statistics for chain $chain_id**"
 
+# ╔═╡ 0dab7f35-8a5a-4ab6-8409-11d3c27195fb
+md"""
+The the next table presents:
+- the mean for each parameter (averaging over all chains), 
+- the mean of the sample standard deviations computed from each chain separately, and
+- the standard deviation of the means computed from each Markov chain separately.
+"""
+
 # ╔═╡ 121869f2-c78d-4b46-bd5d-9d97a2f68e54
 md"""
-**Q3b:** Compare the mean K and sample standard deviation of K from each of the Markov chains you computed. How does the dispersion of K values within each chain compare to the dispersion of K values across all the chains?  What does this imply for the uncertainty in K?
+**Q3b:** Compare the mean K and sample standard deviation of K from each of the Markov chains you computed. How does the dispersion of K values within each chain compare to the dispersion of K values across all the chains?  What does this imply for your uncertainty the esimate of K?
 """
 
 # ╔═╡ 96fc2d52-5128-483c-9962-817f1b013065
 response_3b = missing
 
 # ╔═╡ aea805f0-e986-4fde-a313-34b7ff70a4af
-ismissing(response_3b) && still_missing()
+if ismissing(response_3b) still_missing() end
+
+# ╔═╡ 2b6b8b5e-26b5-457f-a4eb-1e5432c5ba47
+response_3c = missing
+
+# ╔═╡ 2247e5ed-82f2-410d-8e40-f25dd126f2b2
+if ismissing(response_3c) still_missing() end
 
 # ╔═╡ 0aaa6d1e-2ad1-4e0b-a865-6fef5f61d052
 md"""
@@ -414,10 +496,10 @@ md"""
 """
 
 # ╔═╡ 70f74254-6ea7-4034-a37c-f3b46008b556
-response_3c = missing
+response_3d = missing
 
 # ╔═╡ 49c5ef16-4e2d-4971-a969-b6811eb4f5c6
-ismissing(response_3c) && still_missing()
+if ismissing(response_3d) still_missing() end
 
 # ╔═╡ 1670fb35-7106-40c7-9397-c9dc145f3941
 md"""
@@ -425,10 +507,10 @@ md"""
 """
 
 # ╔═╡ afadd762-5eb8-47ca-82b3-0862299e5fb9
-response_3d = missing
+response_3e = missing
 
 # ╔═╡ 3ca97dca-59fc-47a6-b59b-b6f45670571c
-ismissing(response_3d) && still_missing()
+if ismissing(response_3e)  still_missing() end
 
 # ╔═╡ e325a28f-c8ef-4f0c-8f29-e9f4c34ea746
 md"""
@@ -436,34 +518,34 @@ md"""
 """
 
 # ╔═╡ 244eccc2-463d-453b-bc30-1decbf0eed9a
-response_3e = missing
+response_3f = missing
 
 # ╔═╡ 434e0498-d0b2-4b81-8000-0d0cd60efbcc
-ismissing(response_3e) && still_missing()
+if ismissing(response_3f) still_missing() end
 
 # ╔═╡ bb1e1664-0c67-4aea-9e76-37669d253592
 md"""
-**Q3f:** How did the results compare to your predictions in Q1c?  If you found results different than you expected, try to explain the reason for the difference?
+**Q3f:** How did the results compare to your predictions in Q1c?  If you found results different than you expected, try to explain the reason for the difference.
 """
 
 # ╔═╡ 66f4acf5-152c-4792-9d7f-9a0ddb6459f6
-response_3f = missing
+response_3g = missing
 
 # ╔═╡ febba1c9-a166-475b-9344-1a7d7881b7fa
-ismissing(response_3f) && still_missing()
+if ismissing(response_3g)  still_missing() end
 
 # ╔═╡ dedb1ece-059f-4687-804b-93d82fadf08b
 md"""
-**Q3g:**
-The MCMC approach is a theoretically more rigorous approach to quanitfying uncertainties in model parameters.  
-List at least two reasons why the bootstrap approach to assessing parameter uncertainties may be preferred.
+**Q3h:**
+The MCMC approach is a theoretically more rigorous approach to quantifying uncertainties in model parameters for a given model.  
+List at least two reasons why the bootstrap approach to assessing parameter uncertainties may be preferred in some circumstances.
 """
 
 # ╔═╡ 781b21ac-5b21-413f-b22d-a5ba81e4b81c
-response_3g = missing
+response_3h = missing
 
 # ╔═╡ ff200532-9bae-4e3f-b05e-b192c942324b
-ismissing(response_3g) && still_missing()
+if ismissing(response_3h) still_missing() end
 
 # ╔═╡ b60aadbc-4e70-414e-9fdc-c3b042cb17bf
 md"# Setup"
@@ -859,11 +941,15 @@ if @isdefined model_resid
 end
 
 # ╔═╡ bed8ac6f-052a-4cb3-9fb8-5162f1683dd2
-if try_bootstrap_1pl
+if !(@isdefined result )
+	warning_box(md"Make sure that you've checked the both the `Fit 1-planet model` and `Run bootstrap analysis...` boxes above, so can see results from the the bootstrap simulations.")
+elseif try_bootstrap_1pl
+	try_bootstrap_1pl
 	redraw_bootstrap
 	results_bootstrap = Array{Any}(undef,num_bootstrap_samples)
 	rms_bootstrap = zeros(num_bootstrap_samples)
 	rms_bootstrap_train = zeros(num_bootstrap_samples)
+	testset_length = zeros(num_bootstrap_samples)
 	for i in 1:num_bootstrap_samples
 		# Select sample of points to fit
 		idx = sample(1:length(data.t),length(data.t))
@@ -874,18 +960,24 @@ if try_bootstrap_1pl
 		results_bootstrap[i] = find_best_1pl_fit(result.minimizer, loss_tmp, num_init_phases=1, num_init_ωs=4)
 		# Evaluate residuals for cross validation
 		if hasfield(typeof(results_bootstrap[i]),:minimizer)
-			idx_test = filter(i->!(i∈idx), 1:length(data.t))
-			pred_1pl = map(t->model_1pl(t,PKhkωMmω_to_PKeωM(results_bootstrap[i].minimizer[1:5])...,results_bootstrap[i].minimizer[6], t_mean=t_mean),view(data.t,idx_test))
-			resid = view(data.rv,idx_test).-pred_1pl
-			rms_bootstrap[i] = sqrt(mean(resid.^2))
 			idx_train = filter(i->(i∈idx), 1:length(data.t))
+			if length(idx_train) == 0 continue end
 			pred_1pl = map(t->model_1pl(t,PKhkωMmω_to_PKeωM(results_bootstrap[i].minimizer[1:5])...,results_bootstrap[i].minimizer[6], t_mean=t_mean),view(data.t,idx_train))
 			resid = view(data.rv,idx_train).-pred_1pl
 			rms_bootstrap_train[i] = sqrt(mean(resid.^2))
+				
+			idx_test = filter(i->!(i∈idx), 1:length(data.t))
+			testset_length[i] = length(idx_test)
+			if testset_length[i] == 0 continue end
+			pred_1pl = map(t->model_1pl(t,PKhkωMmω_to_PKeωM(results_bootstrap[i].minimizer[1:5])...,results_bootstrap[i].minimizer[6], t_mean=t_mean),view(data.t,idx_test))
+			resid = view(data.rv,idx_test).-pred_1pl
+			rms_bootstrap[i] = sqrt(mean(resid.^2))
+			
 		end
 	end
 	results_bootstrap
-end;
+	nothing
+end
 
 # ╔═╡ 4c890552-529c-46e1-bb1e-cbcea7f24672
 if try_bootstrap_1pl
@@ -893,6 +985,24 @@ if try_bootstrap_1pl
 	histogram!(plt_bootstrap_resid, rms_bootstrap, nbins=40, label="Test points", alpha=0.5)
 	histogram!(plt_bootstrap_resid, rms_bootstrap_train, nbins=40, label="Training points", alpha=0.5)
 end
+
+# ╔═╡ a4c66015-a932-44c4-ae20-dcced50d75f4
+md"""
+### Cross-validation
+In traditional cross-validation, one would have selected a fraction of our data set to use for a training set and a fraction to use for a test set.
+Then, we could repeatedly fit data to the training set and use the test set to evaluate the quality of the predictions of models fit to the training set. 
+This approach can work well in "big data" settings where you have so many data points that there's little cost to discarding a substantial fraction of your data sets.  
+
+In this case, we have only $(length(data.t)) data points.  
+The precision with which we measure the model parameters would be expected to degrade significantly (~40%) if we fit a model using only half of the dataset.
+Instead, we used the bootstrap method to draw synthetic datasets that have an equal number of observations to the real dataset, so as to provide a more accurate estimate of the expected parameter uncertainties.  
+Since we drew samples with replacement, some observations got repeated while other observations got left out of each synthetic dataset.
+Therefore, we can perform a version of cross validation using our bootstrap analysis by treating the observations that got included in a synthetic dataset as training points and the observations that got left out as test points.  
+Below, we'll check the fraction of RV observations were not included in the model fits and are available to serve as a test set.
+"""
+
+# ╔═╡ 81fcda13-7b39-48ac-8872-d7a787796c35
+histogram(testset_length./length(data.t), xlabel="Fraction of RV observations avaliable as a test set", ylabel="Number of samples", label=:none)
 
 # ╔═╡ a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
 if @isdefined results_bootstrap
@@ -951,10 +1061,12 @@ end
 # ╔═╡ d305c716-080f-4faa-9143-bc75bfa6ce6f
 if try_bootstrap_1pl
 	md"""
-**Q2a:** Compare the distribution of the residuals for the training and test sets to:
+**Q2a:** Compare the distribution of the residuals for the training and test sets in the figure above to:
 1. the mean measurement uncertainty ($(round(mean(data.σrv),sigdigits=3)) m/s),
 1. the jitter parameter fit to the data ($(round(σj_mean_bootstrap, sigdigits=3)) m/s), and
 1. the quadrature sum of the two ($(round(sqrt(mean(data.σrv)^2+σj_mean_bootstrap^2),sigdigits=3)) m/s).
+
+What does this imply about the quality of our model for this dataset?
 """
 end
 
@@ -1082,8 +1194,17 @@ if mcmc.run
 	quantile(chains[:,:,chain_id])
 end
 
+# ╔═╡ 074a007c-79e3-40de-b507-6b4c1ed271f2
+if mcmc.run && size(chains,3) >1
+	DataFrame(
+		:parameters=>names(chains)[1:7], 
+		:mean_all=>map(k->mean(chains[k]), names(chains)[1:7]), 
+		:mean_std_within_chain=>map(k->mean(std(chains[k], dims=1)), names(chains)[1:7]), 
+		:std_mean_across_chains=>map(k->std(mean(chains[k], dims=1)), names(chains)[1:7]) )
+end
+
 # ╔═╡ c7d3155c-5124-4724-bc7a-f1e2dcde879b
-if ( @isdefined chains ) && try_bootstrap_1pl 
+if try_bootstrap_1pl && ( @isdefined chains ) && mcmc.run
 md"""
 **Q3c:** Compare the
 - mean K ($(round(mean(chains[:K]),sigdigits=4)) m/s) and
@@ -1118,17 +1239,17 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 
 [compat]
-CSV = "~0.10.3"
-DataFrames = "~1.3.2"
-Distributions = "~0.25.74"
+CSV = "~0.10.4"
+DataFrames = "~1.3.6"
+Distributions = "~0.25.75"
 ForwardDiff = "~0.10.32"
 LaTeXStrings = "~1.3.0"
 MCMCChains = "~5.4.0"
-Optim = "~1.7.2"
+Optim = "~1.7.3"
 PDMats = "~0.11.16"
-Plots = "~1.26.0"
-PlutoTeachingTools = "~0.1.7"
-PlutoUI = "~0.7.37"
+Plots = "~1.34.3"
+PlutoTeachingTools = "~0.2.3"
+PlutoUI = "~0.7.43"
 Query = "~1.0.0"
 StatsBase = "~0.33.21"
 Turing = "~0.21.12"
@@ -1138,7 +1259,7 @@ Turing = "~0.21.12"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.3"
+julia_version = "1.7.0"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]
@@ -1255,6 +1376,11 @@ git-tree-sha1 = "a3704b8e5170f9339dff4e6cb286ad49464d3646"
 uuid = "76274a88-744f-5084-9051-94815aaf08c4"
 version = "0.10.6"
 
+[[deps.BitFlags]]
+git-tree-sha1 = "84259bb6172806304b9101094a7cc4bc6f56dbc6"
+uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
+version = "0.1.5"
+
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "19a35467a82e236ff51bc17a3a44b69ef35185a2"
@@ -1263,9 +1389,9 @@ version = "1.0.8+0"
 
 [[deps.CSV]]
 deps = ["CodecZlib", "Dates", "FilePathsBase", "InlineStrings", "Mmap", "Parsers", "PooledArrays", "SentinelArrays", "Tables", "Unicode", "WeakRefStrings"]
-git-tree-sha1 = "9310d9495c1eb2e4fa1955dd478660e2ecab1fbb"
+git-tree-sha1 = "873fb188a4b9d76549b81465b1f75c82aaf59238"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-version = "0.10.3"
+version = "0.10.4"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -1350,10 +1476,10 @@ uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
 version = "0.3.0"
 
 [[deps.Compat]]
-deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "78bee250c6826e1cf805a88b7f1e86025275d208"
+deps = ["Dates", "LinearAlgebra", "UUIDs"]
+git-tree-sha1 = "5856d3031cdb1f3b2b6340dfdc66b6d9a149a374"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.46.0"
+version = "4.2.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1377,10 +1503,9 @@ uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.4.1"
 
 [[deps.Contour]]
-deps = ["StaticArrays"]
-git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
+git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
-version = "0.5.7"
+version = "0.6.2"
 
 [[deps.Crayons]]
 git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
@@ -1394,9 +1519,9 @@ version = "1.11.0"
 
 [[deps.DataFrames]]
 deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "ae02104e835f219b8930c7664b8012c93475c340"
+git-tree-sha1 = "db2a9cb664fcea7836da4b414c3278d71dd602d2"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.3.2"
+version = "1.3.6"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -1452,15 +1577,15 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "70e9677e1195e7236763042194e3fbf147fdb146"
+git-tree-sha1 = "0d7d213133d948c56e8c2d9f4eab0293491d8e4a"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.74"
+version = "0.25.75"
 
 [[deps.DistributionsAD]]
 deps = ["Adapt", "ChainRules", "ChainRulesCore", "Compat", "DiffRules", "Distributions", "FillArrays", "LinearAlgebra", "NaNMath", "PDMats", "Random", "Requires", "SpecialFunctions", "StaticArrays", "StatsBase", "StatsFuns", "ZygoteRules"]
-git-tree-sha1 = "74dd5dac82812af7041ae322584d5c2181dead5c"
+git-tree-sha1 = "0c139e48a8cea06c6ecbbec19d3ebc5dcbd7870d"
 uuid = "ced4e74d-a319-5a8a-b0ac-84af2272839c"
-version = "0.6.42"
+version = "0.6.43"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -1469,7 +1594,7 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.8.6"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 [[deps.DualNumbers]]
@@ -1484,12 +1609,6 @@ git-tree-sha1 = "7bc3920ba1e577ad3d7ebac75602ab42b557e28e"
 uuid = "366bfd00-2699-11ea-058f-f148b4cae6d8"
 version = "0.20.2"
 
-[[deps.EarCut_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "e3290f2d49e661fbd94046d7e3726ffcb2d41053"
-uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
-version = "2.2.4+0"
-
 [[deps.EllipticalSliceSampling]]
 deps = ["AbstractMCMC", "ArrayInterfaceCore", "Distributions", "Random", "Statistics"]
 git-tree-sha1 = "4cda4527e990c0cc201286e0a0bfbbce00abcfc2"
@@ -1501,11 +1620,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "bad72f730e9e91c08d9427d5e8db95478a3c323d"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.4.8+0"
-
-[[deps.Extents]]
-git-tree-sha1 = "5e1e4c53fa39afe63a7d356e30452249365fba99"
-uuid = "411431e0-e8b7-467b-b5e0-f676ba4f2910"
-version = "0.1.1"
 
 [[deps.FFMPEG]]
 deps = ["FFMPEG_jll"]
@@ -1622,28 +1736,16 @@ uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
 version = "0.1.2"
 
 [[deps.GR]]
-deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "RelocatableFolders", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "c98aea696662d09e215ef7cda5296024a9646c75"
+deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
+git-tree-sha1 = "2c5ab2c1e683d991300b125b9b365cb0a0035d88"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.64.4"
+version = "0.69.1"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "0eb5ef6f270fb70c2d83ee3593f56d02ed6fc7ff"
+git-tree-sha1 = "bc9f7725571ddb4ab2c4bc74fa397c1c5ad08943"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.68.0+0"
-
-[[deps.GeoInterface]]
-deps = ["Extents"]
-git-tree-sha1 = "fb28b5dc239d0174d7297310ef7b84a11804dfab"
-uuid = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
-version = "1.0.1"
-
-[[deps.GeometryBasics]]
-deps = ["EarCut_jll", "GeoInterface", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "12a584db96f1d460421d5fb8860822971cdb8455"
-uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.4.4"
+version = "0.69.1+0"
 
 [[deps.Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -1669,10 +1771,10 @@ uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
 [[deps.HTTP]]
-deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]
-git-tree-sha1 = "0fa77022fe4b511826b39c894c90daf5fce3334a"
+deps = ["Base64", "CodecZlib", "Dates", "IniFile", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
+git-tree-sha1 = "4abede886fcba15cd5fd041fef776b230d004cee"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "0.9.17"
+version = "1.4.0"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg"]
@@ -1779,6 +1881,12 @@ version = "1.0.0"
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
 uuid = "82899510-4779-5014-852e-03e436cf321d"
 version = "1.0.0"
+
+[[deps.JLFzf]]
+deps = ["Pipe", "REPL", "Random", "fzf_jll"]
+git-tree-sha1 = "f377670cda23b6b7c1c0b3893e37451c5c1a2185"
+uuid = "1019f520-868f-41f5-a6de-eb00f4b6a39c"
+version = "0.1.5"
 
 [[deps.JLLWrappers]]
 deps = ["Preferences"]
@@ -2088,6 +2196,12 @@ uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
 
+[[deps.OpenSSL]]
+deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
+git-tree-sha1 = "02be9f845cb58c2d6029a6d5f67f4e0af3237814"
+uuid = "4d8831e6-92b7-49fb-bdf8-b643e874388c"
+version = "1.1.3"
+
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "e60321e3f2616584ff98f0a4f18d98ae6f89bbb3"
@@ -2102,9 +2216,9 @@ version = "0.5.5+0"
 
 [[deps.Optim]]
 deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "ad8de074ed5dad13e87d76c467a82e5eff9c693a"
+git-tree-sha1 = "b9fe76d1a39807fdcf790b991981a922de0c3050"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.7.2"
+version = "1.7.3"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
@@ -2147,6 +2261,11 @@ git-tree-sha1 = "3d5bf43e3e8b412656404ed9466f1dcbf7c50269"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.4.0"
 
+[[deps.Pipe]]
+git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
+uuid = "b98c9c47-44ae-5843-9183-064241ee97a0"
+version = "1.3.0"
+
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b4f5d02549a10e20780a24fce72bea96b6329e29"
@@ -2158,10 +2277,10 @@ deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markd
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[deps.PlotThemes]]
-deps = ["PlotUtils", "Requires", "Statistics"]
-git-tree-sha1 = "a3a964ce9dc7898193536002a6dd892b1b5a6f1d"
+deps = ["PlotUtils", "Statistics"]
+git-tree-sha1 = "8162b2f8547bc23876edd0c5181b27702ae58dce"
 uuid = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
-version = "2.0.1"
+version = "3.0.0"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "SnoopPrecompile", "Statistics"]
@@ -2170,10 +2289,10 @@ uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.3.1"
 
 [[deps.Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "23d109aad5d225e945c813c6ebef79104beda955"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "fae3b66e343703f8f89b854a4da40bce0f84da22"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.26.0"
+version = "1.34.3"
 
 [[deps.PlutoHooks]]
 deps = ["InteractiveUtils", "Markdown", "UUIDs"]
@@ -2189,15 +2308,15 @@ version = "0.1.5"
 
 [[deps.PlutoTeachingTools]]
 deps = ["Downloads", "HypertextLiteral", "LaTeXStrings", "Latexify", "Markdown", "PlutoLinks", "PlutoUI", "Random"]
-git-tree-sha1 = "67c917d383c783aeadd25babad6625b834294b30"
+git-tree-sha1 = "d8be3432505c2febcea02f44e5f4396fae017503"
 uuid = "661c6b06-c737-4d37-b85c-46df65de6f69"
-version = "0.1.7"
+version = "0.2.3"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
+git-tree-sha1 = "2777a5c2c91b3145f5aa75b61bb4c2eb38797136"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.37"
+version = "0.7.43"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -2289,15 +2408,16 @@ uuid = "c1ae055f-0cd5-4b69-90a6-9a35b1a98df9"
 version = "0.1.0"
 
 [[deps.RecipesBase]]
-git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
+deps = ["SnoopPrecompile"]
+git-tree-sha1 = "612a4d76ad98e9722c8ba387614539155a59e30c"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.2.1"
+version = "1.3.0"
 
 [[deps.RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "dc1e451e15d90347a7decc4221842a022b011714"
+git-tree-sha1 = "e7eac76a958f8664f2718508435d058168c7953d"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.5.2"
+version = "0.6.3"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterfaceCore", "ArrayInterfaceStaticArraysCore", "ChainRulesCore", "DocStringExtensions", "FillArrays", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "StaticArraysCore", "Statistics", "Tables", "ZygoteRules"]
@@ -2312,9 +2432,9 @@ version = "1.2.2"
 
 [[deps.RelocatableFolders]]
 deps = ["SHA", "Scratch"]
-git-tree-sha1 = "cdbd3b1338c72ce29d9584fdbe9e9b70eeb5adca"
+git-tree-sha1 = "90bc7a7c96410424509e4263e277e43250c05691"
 uuid = "05181044-ff0b-4ac5-8273-598c1e38db00"
-version = "0.1.3"
+version = "1.0.0"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
@@ -2351,9 +2471,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[deps.SciMLBase]]
 deps = ["ArrayInterfaceCore", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Preferences", "RecipesBase", "RecursiveArrayTools", "StaticArraysCore", "Statistics", "Tables"]
-git-tree-sha1 = "e6778c4d41f3d6213bf4d2803c4eb9ef12b6c0a7"
+git-tree-sha1 = "2c7b9be95f91c971ae4e4a6e3a0556b839874f2b"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "1.59.3"
+version = "1.59.4"
 
 [[deps.ScientificTypesBase]]
 git-tree-sha1 = "a8e18eb383b5ecf1b5e6fc237eb39255044fd92b"
@@ -2368,9 +2488,9 @@ version = "1.1.1"
 
 [[deps.SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "130c68b3497094753bacf084ae59c9eeaefa2ee7"
+git-tree-sha1 = "c0f56940fc967f3d5efed58ba829747af5f8b586"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.14"
+version = "1.3.15"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -2390,6 +2510,11 @@ deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
+
+[[deps.SimpleBufferStream]]
+git-tree-sha1 = "874e8867b33a00e784c8a7e4b60afe9e037b74e1"
+uuid = "777ac1f9-54b0-4bf8-805c-2214025038e7"
+version = "1.1.0"
 
 [[deps.SnoopPrecompile]]
 git-tree-sha1 = "f604441450a3c0569830946e5b33b78c928e1a85"
@@ -2494,9 +2619,9 @@ version = "1.0.2"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
-git-tree-sha1 = "7149a60b01bf58787a1b83dad93f90d4b9afbe5d"
+git-tree-sha1 = "2d7164f7b8a066bcfa6224e67736ce0eb54aef5b"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.8.1"
+version = "1.9.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -2571,9 +2696,9 @@ uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
 
 [[deps.Unzip]]
-git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
+git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
-version = "0.1.2"
+version = "0.2.0"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -2753,6 +2878,12 @@ git-tree-sha1 = "8c1a8e4dfacb1fd631745552c8db35d0deb09ea0"
 uuid = "700de1a5-db45-46bc-99cf-38207098b444"
 version = "0.2.2"
 
+[[deps.fzf_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "868e669ccb12ba16eaf50cb2957ee2ff61261c56"
+uuid = "214eeab7-80f7-51ab-84ad-2988db7cef09"
+version = "0.29.0+0"
+
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "3a2ea60308f0996d26f1e5354e10c24e9ef905d4"
@@ -2834,7 +2965,7 @@ version = "1.4.1+0"
 # ╠═5e92054a-ca9e-4949-9727-5a9ed14003c0
 # ╟─ffd80564-ea2a-40c3-8250-5c9482ab641d
 # ╠═bce3f35c-07a1-48ef-8a29-243b2215fcb5
-# ╟─174f6c6d-6ff9-449d-86b3-85bcad9f01a2
+# ╠═174f6c6d-6ff9-449d-86b3-85bcad9f01a2
 # ╟─8b1f8b91-12b5-4e61-a8ff-63538189cf34
 # ╟─5edc2a2d-6f63-4ac6-8c33-2c5d670bc466
 # ╟─811ed6ac-4cf2-435a-934c-edfbb38564b2
@@ -2843,6 +2974,7 @@ version = "1.4.1+0"
 # ╟─b821a2ae-bf16-4018-b85a-ff1713f40103
 # ╠═2f09622b-838c-42df-a74f-81960916fae2
 # ╟─c4f683e2-ce56-45a7-b483-7a8a658cf342
+# ╟─8385686d-fd74-4ff2-92ca-eff3f60ba112
 # ╟─21834080-14de-4926-9766-5a3ad994e2a1
 # ╟─3c14ec5c-e72a-4af4-8859-fd7a0bf91409
 # ╠═fcf19e04-3e35-4a01-8036-fd5b283fdd37
@@ -2871,14 +3003,21 @@ version = "1.4.1+0"
 # ╟─ebec340e-297f-44c1-8095-60ea68dd530c
 # ╟─bed8ac6f-052a-4cb3-9fb8-5162f1683dd2
 # ╟─a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
-# ╟─7296def6-31c0-4df2-b6ca-2fd953bdfb1f
+# ╟─a4c66015-a932-44c4-ae20-dcced50d75f4
+# ╟─81fcda13-7b39-48ac-8872-d7a787796c35
+# ╟─77be89d0-9c2d-40b6-9f76-1ab45cb5a7a9
 # ╟─4c890552-529c-46e1-bb1e-cbcea7f24672
 # ╟─d305c716-080f-4faa-9143-bc75bfa6ce6f
-# ╠═0737daef-b8f1-49ef-9a06-5cf1b716f719
+# ╟─0737daef-b8f1-49ef-9a06-5cf1b716f719
 # ╟─707601dc-797d-4332-8538-f7a358113bc9
+# ╟─6f044344-d418-463b-a19f-39797448502e
 # ╟─10a2b5b5-6a84-4b1e-a5f6-dd2434541edb
 # ╠═390d9fc3-22f1-4e46-8164-4fc33f494035
 # ╟─2eb9bbc8-1722-459f-aa57-a55dd54cebd0
+# ╟─13986b47-4a12-4fe0-9a7c-5930c6f36b48
+# ╟─a60c14c0-8906-446c-8c78-0df9cf434b8a
+# ╟─083da0e3-4a90-4ccd-9bcf-cbb9d49bb8d9
+# ╟─42f74f12-b8fb-4def-b81a-a7507a07f195
 # ╟─8743b110-ed40-4718-8fc3-e296ee8339f2
 # ╟─67f3aef3-f34f-4e67-8ff4-adb8aa0284db
 # ╟─6a141962-d4d6-4f27-b94e-2d0aee0740c7
@@ -2894,6 +3033,7 @@ version = "1.4.1+0"
 # ╟─6c2ab644-4799-4bf3-aac0-431bf399dab0
 # ╟─300a1ea8-023e-4c38-8a7e-1bc9ac62c311
 # ╟─e2905cac-57f9-4da9-9160-828f46d72bb6
+# ╟─25a13214-e589-4c77-bde5-211c59581af2
 # ╟─7e1a46fd-392c-412c-8a5c-e54765112564
 # ╠═a935174a-1057-4ad6-9b92-84981f4a4bb2
 # ╟─b995e3be-8c50-489b-b62f-97f15d43b899
@@ -2902,10 +3042,14 @@ version = "1.4.1+0"
 # ╟─7a2e757b-4117-455d-ba41-6205ec4746dd
 # ╟─60a09c22-4100-41e9-8ecc-bfefde1492e0
 # ╟─c7fe279b-d978-4b97-a031-bb933b64d90f
+# ╟─0dab7f35-8a5a-4ab6-8409-11d3c27195fb
+# ╟─074a007c-79e3-40de-b507-6b4c1ed271f2
 # ╟─121869f2-c78d-4b46-bd5d-9d97a2f68e54
 # ╠═96fc2d52-5128-483c-9962-817f1b013065
 # ╟─aea805f0-e986-4fde-a313-34b7ff70a4af
 # ╟─c7d3155c-5124-4724-bc7a-f1e2dcde879b
+# ╠═2b6b8b5e-26b5-457f-a4eb-1e5432c5ba47
+# ╟─2247e5ed-82f2-410d-8e40-f25dd126f2b2
 # ╟─0aaa6d1e-2ad1-4e0b-a865-6fef5f61d052
 # ╟─f6bc0968-0397-40f3-ae1a-6f93caa6f77d
 # ╠═70f74254-6ea7-4034-a37c-f3b46008b556
