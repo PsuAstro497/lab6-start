@@ -1046,6 +1046,13 @@ if @isdefined results_bootstrap
 	k_mean_bootstrap = mean(esample.*cos.(ωsample))
 	k_std_bootstrap = std(esample.*cos.(ωsample))
 
+	local Mmωsample = map(r->PKhkωMmω_to_PKeωM(r.minimizer)[5],results_bootstrap)
+	Mmω_mean_bootstrap = mean(Mmωsample)
+	Mmω_std_bootstrap = std(Mmωsample)
+	plt_Mmω_hist = plot(xlabel="M₀-ω", ylabel="Samples",xticks=
+	optimize_ticks(minimum(Mmωsample),maximum(Mmωsample),k_max=3)[1])
+	histogram!(plt_Mmω_hist,ωsample, label=:none, nbins=50)
+
 	local Csample = map(r->r.minimizer[6],results_bootstrap)
 	C_mean_bootstrap = mean(Csample)
 	C_std_bootstrap = std(Csample)
@@ -1060,7 +1067,7 @@ if @isdefined results_bootstrap
 	optimize_ticks(minimum(σjsample),maximum(σjsample),k_max=3)[1])
 	histogram!(plt_σj_hist,σjsample, label=:none, nbins=50)
 
-	bootstrap_results_df = DataFrame(:parameter=>[:P, :K, :h, :k, :e, :ω, :C, :σj], :mean=>[P_mean_bootstrap, K_mean_bootstrap, h_mean_bootstrap, k_mean_bootstrap, e_mean_bootstrap, ω_mean_bootstrap, C_mean_bootstrap, σj_mean_bootstrap], :std=>[P_std_bootstrap,K_std_bootstrap,h_std_bootstrap,k_std_bootstrap,e_std_bootstrap,ω_std_bootstrap,C_std_bootstrap,σj_std_bootstrap])
+	bootstrap_results_df = DataFrame(:parameter=>[:P, :K, :h, :k, :e, :ω, :Mmω, :C, :σj], :mean=>[P_mean_bootstrap, K_mean_bootstrap, h_mean_bootstrap, k_mean_bootstrap, e_mean_bootstrap, ω_mean_bootstrap, Mmω_mean_bootstrap, C_mean_bootstrap, σj_mean_bootstrap], :std=>[P_std_bootstrap,K_std_bootstrap,h_std_bootstrap,k_std_bootstrap,e_std_bootstrap,ω_std_bootstrap,Mmω_std_bootstrap,C_std_bootstrap,σj_std_bootstrap])
 	
 	plot(plt_title, plt_P_hist, plt_K_hist, plt_e_hist, plt_ω_hist, plt_C_hist, plt_σj_hist, layout=@layout([A{0.01h}; [B C; D E; F G ]]), size=(600,600) )
 end
@@ -3012,7 +3019,7 @@ version = "1.4.1+0"
 # ╟─bed8ac6f-052a-4cb3-9fb8-5162f1683dd2
 # ╟─a9a0bf9f-4ab5-42c5-aa5e-24678ba5ca5a
 # ╟─933facd7-a1fc-43bb-86b4-710c88a60a23
-# ╠═696ccc8a-6bae-4d0f-be33-55c60b21dffc
+# ╟─696ccc8a-6bae-4d0f-be33-55c60b21dffc
 # ╟─a4c66015-a932-44c4-ae20-dcced50d75f4
 # ╟─81fcda13-7b39-48ac-8872-d7a787796c35
 # ╟─77be89d0-9c2d-40b6-9f76-1ab45cb5a7a9
